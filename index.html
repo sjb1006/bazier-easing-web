@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>贝塞尔实验室 · 纵轴舒展版 | 4/7/9控制点 范围-2~3</title>
+    <title>贝塞尔实验室 · 横轴收缩版 | 4/7/9控制点 范围-2~3</title>
     <style>
         * {
             margin: 0;
@@ -232,10 +231,10 @@
             <h2>🎯 四控制点 · 三次贝塞尔 <small>范围 -2 ~ 3</small></h2>
             <p>B(t) = (1−t)³·p₁ + 3(1−t)²·t·p₂ + 3(1−t)·t²·p₃ + t³·p₄</p>
         </div>
-        <canvas id="bezier4Canvas" width="720" height="580" style="max-width:100%; height:auto; aspect-ratio:720/580"></canvas>
+        <canvas id="bezier4Canvas" width="720" height="490" style="max-width:100%; height:auto; aspect-ratio:720/490"></canvas>
         <div class="control">
             <div class="slider-grid" id="points4Container"></div>
-            <div class="desc">⚡ 横轴: t (0→1) &nbsp;|&nbsp; 纵轴舒展（高度增加，每格间距≈原1.5倍）&nbsp;|&nbsp; 控制点 [-2 , 3]</div>
+            <div class="desc">⚡ 横轴宽度缩减（左右边距增大），纵轴每格高度自然 &nbsp;|&nbsp; 控制点 [-2 , 3]</div>
             <div class="warning">✨ 超出 [0,1] 区域实现弹性/过冲 | 滑块 / 数字 / ±按钮实时调节</div>
         </div>
     </div>
@@ -246,7 +245,7 @@
             <h2>🌀 七控制点 · 六次贝塞尔 <small>高自由度</small></h2>
             <p>B(t) = Σ C(6,i)·(1−t)^(6−i)·t^i·pᵢ₊₁</p>
         </div>
-        <canvas id="bezier7Canvas" width="720" height="580" style="max-width:100%; height:auto; aspect-ratio:720/580"></canvas>
+        <canvas id="bezier7Canvas" width="720" height="490" style="max-width:100%; height:auto; aspect-ratio:720/490"></canvas>
         <div class="control">
             <div class="slider-grid" id="points7Container"></div>
             <div class="desc">🎛️ 六次贝塞尔塑造复杂波形，适合高级动画弹性</div>
@@ -259,7 +258,7 @@
             <h2>💀 九控制点 · 八次贝塞尔 <small>极限疯狂</small></h2>
             <p>B(t) = Σ C(8,i)·(1−t)^(8−i)·t^i·pᵢ₊₁ &nbsp; 九重扭曲</p>
         </div>
-        <canvas id="bezier9Canvas" width="720" height="580" style="max-width:100%; height:auto; aspect-ratio:720/580"></canvas>
+        <canvas id="bezier9Canvas" width="720" height="490" style="max-width:100%; height:auto; aspect-ratio:720/490"></canvas>
         <div class="control">
             <div class="slider-grid" id="points9Container"></div>
             <div class="desc">🔥 八次贝塞尔：9个独立控制点，制造极速往返、多次过冲</div>
@@ -341,16 +340,20 @@
             return { minY: minY - margin, maxY: maxY + margin };
         }
 
-        // ---------- 优化版绘制器 (带 RAF 节流，纵轴舒展) ----------
+        // ---------- 优化版绘制器 (带 RAF 节流，横轴缩减通过增大左右边距实现) ----------
         class OptimizedBezierDrawer {
             constructor(canvasId, pointsCount, defaultValues) {
                 this.canvas = document.getElementById(canvasId);
                 this.ctx = this.canvas.getContext('2d');
                 this.W = this.canvas.width;
                 this.H = this.canvas.height;
-                this.pad = 50;          // 边距稍微增加，让纵轴呼吸空间
-                this.areaW = this.W - this.pad * 2;
-                this.areaH = this.H - this.pad * 2;
+                // 关键：增大左右边距，使横轴绘图区域变窄，实现“横轴宽度少一点”
+                this.padLeft = 70;
+                this.padRight = 70;
+                this.padTop = 48;
+                this.padBottom = 48;
+                this.areaW = this.W - this.padLeft - this.padRight;
+                this.areaH = this.H - this.padTop - this.padBottom;
                 this.pointsCount = pointsCount;
                 this.points = [...defaultValues];
                 this.sliders = [];
@@ -433,7 +436,7 @@
                 const expand = Math.max(0.2, (yMax - yMin) * 0.12);
                 yMin -= expand;
                 yMax += expand;
-                const mapY = (val) => this.H - this.pad - ((val - yMin) / (yMax - yMin)) * this.areaH;
+                const mapY = (val) => this.H - this.padBottom - ((val - yMin) / (yMax - yMin)) * this.areaH;
                 this.drawAxes(yMin, yMax, mapY);
                 this.drawCurveLine(pointsArray, mapY);
                 this.drawMarkers(pointsArray, mapY);
@@ -543,12 +546,13 @@
             }
             
             getX(t) {
-                return this.pad + t * this.areaW;
+                return this.padLeft + t * this.areaW;
             }
             
             drawAxes(yMin, yMax, mapY) {
                 const ctx = this.ctx;
-                const W = this.W, H = this.H, pad = this.pad;
+                const W = this.W, H = this.H;
+                const left = this.padLeft, right = this.padRight, top = this.padTop, bottom = this.padBottom;
                 ctx.clearRect(0, 0, W, H);
                 // 浅色网格
                 ctx.strokeStyle = '#e2e8f0';
@@ -556,18 +560,18 @@
                 for (let i = 0; i <= 1; i += 0.1) {
                     const x = this.getX(i);
                     ctx.beginPath();
-                    ctx.moveTo(x, pad);
-                    ctx.lineTo(x, H - pad);
+                    ctx.moveTo(x, top);
+                    ctx.lineTo(x, H - bottom);
                     ctx.stroke();
                 }
-                const yStepCount = 12;
+                const yStepCount = 10;
                 for (let i = 0; i <= yStepCount; i++) {
                     const v = yMin + (yMax - yMin) * (i / yStepCount);
                     const y = mapY(v);
-                    if (y >= pad && y <= H - pad) {
+                    if (y >= top && y <= H - bottom) {
                         ctx.beginPath();
-                        ctx.moveTo(pad, y);
-                        ctx.lineTo(W - pad, y);
+                        ctx.moveTo(left, y);
+                        ctx.lineTo(W - right, y);
                         ctx.stroke();
                     }
                 }
@@ -575,10 +579,10 @@
                 ctx.strokeStyle = '#6c86a3';
                 ctx.lineWidth = 1.8;
                 ctx.beginPath();
-                ctx.moveTo(pad, H - pad);
-                ctx.lineTo(W - pad, H - pad);
-                ctx.moveTo(pad, H - pad);
-                ctx.lineTo(pad, pad);
+                ctx.moveTo(left, H - bottom);
+                ctx.lineTo(W - right, H - bottom);
+                ctx.moveTo(left, H - bottom);
+                ctx.lineTo(left, top);
                 ctx.stroke();
                 
                 ctx.fillStyle = '#2c3e66';
@@ -587,10 +591,10 @@
                 for (let t = 0; t <= 1; t += 0.1) {
                     const x = this.getX(t);
                     ctx.beginPath();
-                    ctx.moveTo(x, H - pad);
-                    ctx.lineTo(x, H - pad + 5);
+                    ctx.moveTo(x, H - bottom);
+                    ctx.lineTo(x, H - bottom + 5);
                     ctx.stroke();
-                    ctx.fillText(t.toFixed(1), x, H - pad + 18);
+                    ctx.fillText(t.toFixed(1), x, H - bottom + 18);
                 }
                 // Y轴刻度
                 ctx.textAlign = 'right';
@@ -606,13 +610,13 @@
                 yTicks.sort((a,b)=>a-b);
                 for (let v of yTicks) {
                     const y = mapY(v);
-                    if (y >= pad && y <= H - pad) {
+                    if (y >= top && y <= H - bottom) {
                         ctx.beginPath();
-                        ctx.moveTo(pad - 5, y);
-                        ctx.lineTo(pad, y);
+                        ctx.moveTo(left - 5, y);
+                        ctx.lineTo(left, y);
                         ctx.stroke();
                         ctx.fillStyle = '#f97316';
-                        ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 2), pad - 9, y + 4);
+                        ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 2), left - 9, y + 4);
                     }
                 }
                 // 虚线 y=0 , y=1
@@ -623,20 +627,20 @@
                 if (yMin <= 0 && yMax >= 0) {
                     const y0 = mapY(0);
                     ctx.beginPath();
-                    ctx.moveTo(pad, y0);
-                    ctx.lineTo(W - pad, y0);
+                    ctx.moveTo(left, y0);
+                    ctx.lineTo(W - right, y0);
                     ctx.stroke();
                     ctx.fillStyle = '#e6782e';
-                    ctx.fillText('y=0', pad + 6, y0 - 3);
+                    ctx.fillText('y=0', left + 6, y0 - 3);
                 }
                 if (yMin <= 1 && yMax >= 1) {
                     const y1 = mapY(1);
                     ctx.beginPath();
-                    ctx.moveTo(pad, y1);
-                    ctx.lineTo(W - pad, y1);
+                    ctx.moveTo(left, y1);
+                    ctx.lineTo(W - right, y1);
                     ctx.stroke();
                     ctx.fillStyle = '#e6782e';
-                    ctx.fillText('y=1', pad + 6, y1 - 3);
+                    ctx.fillText('y=1', left + 6, y1 - 3);
                 }
                 ctx.setLineDash([]);
                 ctx.restore();
@@ -660,7 +664,7 @@
                     const yVal = bezierEval(t, points);
                     const xPos = this.getX(t);
                     const yPos = mapY(yVal);
-                    if (yPos >= this.pad - 20 && yPos <= this.H - this.pad + 20) {
+                    if (yPos >= this.padTop - 20 && yPos <= this.H - this.padBottom + 20) {
                         if (first) {
                             ctx.moveTo(xPos, yPos);
                             first = false;
@@ -682,7 +686,7 @@
                     const yVal = bezierEval(t, points);
                     const xPos = this.getX(t);
                     const yPos = mapY(yVal);
-                    if (yPos >= this.pad - 5 && yPos <= this.H - this.pad + 5) {
+                    if (yPos >= this.padTop - 5 && yPos <= this.H - this.padBottom + 5) {
                         ctx.beginPath();
                         ctx.arc(xPos, yPos, 2.2, 0, Math.PI * 2);
                         ctx.fillStyle = '#3b82f6';
@@ -714,7 +718,7 @@
                     const yVal = bezierEval(tRef, points);
                     const xPos = this.getX(tRef);
                     const yPos = mapY(yVal);
-                    if (yPos >= this.pad && yPos <= this.H - this.pad) {
+                    if (yPos >= this.padTop && yPos <= this.H - this.padBottom) {
                         ctx.beginPath();
                         ctx.arc(xPos, yPos, 3.2, 0, Math.PI*2);
                         ctx.fillStyle = '#a855f7';
@@ -728,9 +732,9 @@
         }
         
         // 默认调皮但可展示范围的值
-        const defaultPoints4 = [0, 0.3, 1, 1];
-        const defaultPoints7 = [0, -0.2, 1.4, 2.4, 1.9, 2.3, 2.8];
-        const defaultPoints9 = [0, -0.7, 0.3, 1.8, 2.9, 1.3, 2.5, 1.9, 2.9];
+        const defaultPoints4 = [0, 0.3, 2.2, 1];
+        const defaultPoints7 = [0, -0.2, 1.4, 2.4, 1.9, 2.3, 1];
+        const defaultPoints9 = [0, -0.7, 0.3, 1.8, 2.9, 1.3, 2.5, 1.9, 1];
         
         // 实例化 (所有绘图自动节流)
         const drawer4 = new OptimizedBezierDrawer('bezier4Canvas', 4, defaultPoints4);
