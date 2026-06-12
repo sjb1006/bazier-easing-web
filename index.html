@@ -1,692 +1,743 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>四控制点贝塞尔缓动 (p1 p2 p3 p4 范围 -1~2 | 4位小数 | 步进0.1)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>贝塞尔实验室 · 流畅优化版 | 4/7/9控制点 范围-2~3</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
+
         body {
-            background: #f0f2f5;
-            padding: 24px 20px;
+            background: #f4f7fc;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding: 30px 20px;
         }
-        .wrap {
-            max-width: 780px;
+
+        .container {
+            max-width: 1000px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 36px;
         }
+
+        /* 白色卡片风格 */
+        .card {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid #e9edf2;
+            transition: all 0.2s;
+        }
+
+        .card-header {
+            padding: 18px 24px 8px 24px;
+            border-bottom: 1px solid #eef2f8;
+            background: #ffffff;
+        }
+
+        .card-header h2 {
+            font-size: 1.55rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            color: #0c4e6e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-header h2 small {
+            background: #eef2ff;
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: #1e5691;
+        }
+
+        .card-header p {
+            color: #4b5565;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            font-family: monospace;
+        }
+
         canvas {
             background: #ffffff;
-            border: 1px solid #cfdde6;
-            border-radius: 14px;
             display: block;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-        }
-        .control {
-            background: #ffffff;
-            padding: 20px 22px;
-            border: 1px solid #e2e8f0;
+            margin: 18px auto 0 auto;
             border-radius: 20px;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.02);
+            width: 100%;
+            height: auto;
+            border: 1px solid #dee4ec;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
+
+        .control {
+            padding: 18px 24px 24px 24px;
+        }
+
+        .slider-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
         .slider-row {
-            margin: 16px 0;
             display: flex;
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            background: #fafcff;
+            padding: 6px 12px;
+            border-radius: 60px;
+            border: 1px solid #eef2f8;
         }
+
         label {
             width: 48px;
-            font-size: 15px;
-            font-weight: 600;
-            color: #1e293b;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #2c3e66;
             flex-shrink: 0;
-            letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace;
         }
+
         input[type="range"] {
             flex: 1;
-            min-width: 200px;
-            max-width: 380px;
-            height: 4px;
-            border-radius: 10px;
+            min-width: 160px;
+            height: 5px;
+            border-radius: 8px;
             background: #e2e8f0;
+            -webkit-appearance: none;
         }
+
         input[type="range"]:focus {
             outline: none;
         }
-        .num-input {
-            width: 95px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 500;
-            color: #0f172a;
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 6px 8px;
-            background: #fff;
-            font-family: 'JetBrains Mono', monospace, 'SF Mono';
-            flex-shrink: 0;
-            transition: 0.1s;
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #f97316;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            border: none;
         }
+
+        .num-input {
+            width: 85px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            background: #ffffff;
+            border: 1px solid #cdd9ed;
+            border-radius: 30px;
+            padding: 6px 6px;
+            color: #1f2a44;
+            font-family: monospace;
+            flex-shrink: 0;
+        }
+
         .num-input:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            border-color: #f97316;
+            box-shadow: 0 0 0 2px rgba(249,115,22,0.2);
         }
+
         .step-btn {
-            width: 32px;
-            height: 32px;
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
+            width: 34px;
+            height: 34px;
             background: #f8fafc;
+            border: 1px solid #cbd5e6;
+            color: #f97316;
+            border-radius: 40px;
+            font-size: 20px;
+            font-weight: 800;
             cursor: pointer;
-            font-size: 18px;
-            font-weight: 600;
-            color: #1e293b;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            transition: 0.1s;
             flex-shrink: 0;
-            user-select: none;
-            transition: all 0.1s ease;
-            line-height: 1;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
+
         .step-btn:hover {
-            background: #eef2ff;
-            border-color: #94a3b8;
-            transform: scale(0.97);
+            background: #fff1e6;
+            border-color: #f97316;
+            transform: scale(0.96);
         }
+
         .step-btn:active {
-            background: #e2e8f0;
-            transform: scale(0.95);
+            background: #ffe1cc;
         }
+
         .step-btn:disabled {
             opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
             pointer-events: none;
-            background: #f1f5f9;
         }
+
         .desc {
-            margin-top: 18px;
-            font-size: 13px;
-            background: #f8fafc;
-            padding: 12px 14px;
-            border-radius: 16px;
-            color: #1e293b;
-            line-height: 1.5;
-            border-left: 3px solid #3b82f6;
-        }
-        .warning {
-            margin-top: 12px;
+            background: #fef9f0;
+            padding: 12px 18px;
+            border-radius: 1.5rem;
             font-size: 12.5px;
-            background: #fffbeb;
-            border-left: 3px solid #f59e0b;
-            padding: 10px 14px;
-            border-radius: 14px;
+            color: #3b4b6e;
+            border-left: 4px solid #f97316;
+            margin-top: 18px;
+            font-family: monospace;
+        }
+
+        .warning {
+            margin-top: 14px;
+            font-size: 12px;
+            background: #fff7ed;
+            border-left: 3px solid #facc15;
+            padding: 10px 16px;
+            border-radius: 1.2rem;
             color: #b45309;
         }
-        .badge {
-            display: inline-block;
-            background: #eef2ff;
-            border-radius: 40px;
-            padding: 2px 10px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #1e40af;
-            margin-right: 10px;
+
+        ::-webkit-scrollbar {
+            width: 5px;
         }
-        @media (max-width: 640px) {
-            .slider-row {
-                gap: 8px;
-            }
-            .num-input {
-                width: 78px;
-                font-size: 12px;
-            }
-            .step-btn {
-                width: 28px;
-                height: 28px;
-                font-size: 16px;
-            }
-            label {
-                width: 40px;
-            }
-            .control {
-                padding: 16px;
-            }
+
+        ::-webkit-scrollbar-track {
+            background: #eef2fa;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #f97316;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <canvas id="curveCanvas" width="680" height="460" style="width:100%; height:auto; max-width:680px; aspect-ratio:680/460"></canvas>
+<div class="container">
+    <!-- 4点卡片 -->
+    <div class="card">
+        <div class="card-header">
+            <h2>🎯 四控制点 · 三次贝塞尔 <small>范围 -2 ~ 3</small></h2>
+            <p>B(t) = (1−t)³·p₁ + 3(1−t)²·t·p₂ + 3(1−t)·t²·p₃ + t³·p₄</p>
+        </div>
+        <canvas id="bezier4Canvas" width="720" height="450" style="max-width:100%; height:auto; aspect-ratio:720/450"></canvas>
+        <div class="control">
+            <div class="slider-grid" id="points4Container"></div>
+            <div class="desc">⚡ 横轴: t (0→1) &nbsp;|&nbsp; 纵轴动态适配 &nbsp;|&nbsp; 控制点 [-2 , 3] ，步进 0.1</div>
+            <div class="warning">✨ 超出 [0,1] 区域实现弹性/过冲 | 滑块 / 数字 / ±按钮实时调节</div>
+        </div>
+    </div>
 
-    <div class="control">
-        <!-- p1 控制点 -->
-        <div class="slider-row">
-            <label>p₁</label>
-            <input type="range" id="p1" min="-1" max="2" step="0.01" value="0">
-            <input type="number" id="p1Input" class="num-input" step="0.1" min="-1" max="2" value="0">
-            <button class="step-btn" data-target="p1" data-delta="-0.1" title="减小 p₁ (步进 0.1)">−</button>
-            <button class="step-btn" data-target="p1" data-delta="0.1" title="增大 p₁ (步进 0.1)">+</button>
+    <!-- 7点卡片 -->
+    <div class="card">
+        <div class="card-header">
+            <h2>🌀 七控制点 · 六次贝塞尔 <small>高自由度</small></h2>
+            <p>B(t) = Σ C(6,i)·(1−t)^(6−i)·t^i·pᵢ₊₁</p>
         </div>
-        <!-- p2 控制点 -->
-        <div class="slider-row">
-            <label>p₂</label>
-            <input type="range" id="p2" min="-1" max="2" step="0.01" value="0">
-            <input type="number" id="p2Input" class="num-input" step="0.1" min="-1" max="2" value="0">
-            <button class="step-btn" data-target="p2" data-delta="-0.1" title="减小 p₂ (步进 0.1)">−</button>
-            <button class="step-btn" data-target="p2" data-delta="0.1" title="增大 p₂ (步进 0.1)">+</button>
+        <canvas id="bezier7Canvas" width="720" height="450" style="max-width:100%; height:auto; aspect-ratio:720/450"></canvas>
+        <div class="control">
+            <div class="slider-grid" id="points7Container"></div>
+            <div class="desc">🎛️ 六次贝塞尔塑造复杂波形，适合高级动画弹性</div>
         </div>
-        <!-- p3 控制点 (新增) -->
-        <div class="slider-row">
-            <label>p₃</label>
-            <input type="range" id="p3" min="-1" max="2" step="0.01" value="1">
-            <input type="number" id="p3Input" class="num-input" step="0.1" min="-1" max="2" value="1">
-            <button class="step-btn" data-target="p3" data-delta="-0.1" title="减小 p₃ (步进 0.1)">−</button>
-            <button class="step-btn" data-target="p3" data-delta="0.1" title="增大 p₃ (步进 0.1)">+</button>
-        </div>
-        <!-- p4 控制点 -->
-        <div class="slider-row">
-            <label>p₄</label>
-            <input type="range" id="p4" min="-1" max="2" step="0.01" value="1">
-            <input type="number" id="p4Input" class="num-input" step="0.1" min="-1" max="2" value="1">
-            <button class="step-btn" data-target="p4" data-delta="-0.1" title="减小 p₄ (步进 0.1)">−</button>
-            <button class="step-btn" data-target="p4" data-delta="0.1" title="增大 p₄ (步进 0.1)">+</button>
-        </div>
+    </div>
 
-        <div class="desc">
-            <span class="badge">📐 完整三次贝塞尔</span> 
-            <strong>公式：</strong> B(t) = (1−t)³·p₁ + 3(1−t)²·t·p₂ + 3(1−t)·t²·p₃ + t³·p₄ &nbsp;&nbsp; ( t ∈ [0,1] )<br>
-            📌 横轴为时间 t (0 → 1) &nbsp; | &nbsp; 纵轴为缓动输出值（可超出 0–1，回弹/过冲效果）
+    <!-- 9点卡片（疯狂） -->
+    <div class="card">
+        <div class="card-header">
+            <h2>💀 九控制点 · 八次贝塞尔 <small>极限疯狂</small></h2>
+            <p>B(t) = Σ C(8,i)·(1−t)^(8−i)·t^i·pᵢ₊₁ &nbsp; 九重扭曲</p>
         </div>
-        <div class="warning">
-            ⚠️ 四个控制点范围均为 <strong>[-1, 2]</strong>，曲线可能超出常规边界（弹性/夸张过渡）<br>
-            ✏️ 可直接输入数字，或使用右侧 <strong>+/− 按钮</strong> 以 0.1 为步长微调 (单击变动一次)<br>
-            🔢 数值保留最多 4 位小数，输入几位显示几位，曲线实时响应
+        <canvas id="bezier9Canvas" width="720" height="450" style="max-width:100%; height:auto; aspect-ratio:720/450"></canvas>
+        <div class="control">
+            <div class="slider-grid" id="points9Container"></div>
+            <div class="desc">🔥 八次贝塞尔：9个独立控制点，制造极速往返、多次过冲</div>
+            <div class="warning">⚠️ 极端组合可能导致Y轴范围极宽，但自动适配 | 滑动流畅优化</div>
         </div>
     </div>
 </div>
 
 <script>
     (function(){
-        // ----- DOM 元素 -----
-        const canvas = document.getElementById('curveCanvas');
-        const ctx = canvas.getContext('2d');
-        const W = canvas.width;
-        const H = canvas.height;
-
-        // 边距 & 绘图区
-        const pad = 42;
-        const areaW = W - pad * 2;
-        const areaH = H - pad * 2;
-        const gridStep = 0.1;
-
-        // 控制点滑块和输入框
-        const p1Slider = document.getElementById('p1');
-        const p2Slider = document.getElementById('p2');
-        const p3Slider = document.getElementById('p3');
-        const p4Slider = document.getElementById('p4');
-        
-        const p1Input = document.getElementById('p1Input');
-        const p2Input = document.getElementById('p2Input');
-        const p3Input = document.getElementById('p3Input');
-        const p4Input = document.getElementById('p4Input');
-
-        // 全局范围限制
-        const MIN_VAL = -1;
-        const MAX_VAL = 2;
+        // 范围 -2 ~ 3
+        const MIN_VAL = -2;
+        const MAX_VAL = 3;
         const MAX_DECIMALS = 4;
-        const BUTTON_STEP = 0.1;
-
-        // ========= 核心贝塞尔函数 (符合题目要求的函数签名) =========
-        // 标准三次贝塞尔求值: 给定 t (0~1) 和四个控制点 p1~p4，返回纵坐标 y
-        function cubicBezierY(t, p1, p2, p3, p4) {
-            if (t <= 0) return p1;
-            if (t >= 1) return p4;
-            const mt = 1 - t;
-            const mt2 = mt * mt;
-            const t2 = t * t;
-            const mt3 = mt2 * mt;
-            const t3 = t2 * t;
-            // B(t) = (1-t)³·p1 + 3·(1-t)²·t·p2 + 3·(1-t)·t²·p3 + t³·p4
-            return mt3 * p1 + 3.0 * mt2 * t * p2 + 3.0 * mt * t2 * p3 + t3 * p4;
-        }
-
-        // 题目要求的完整函数 (timer/length 风格，内部调用标准贝塞尔)
-        // 外部可直接使用，用于满足题设代码形式。绘图时使用更直接的 cubicBezierY。
-        window.scrEaseOutCubic = function(timer, length, p1, p2, p3, p4) {
-            let t = timer / length;
-            if (t < 0) t = 0;
-            if (t > 1) t = 1;
-            return cubicBezierY(t, p1, p2, p3, p4);
-        };
-
-        // 获取当前所有控制点数值 (从滑块读取)
-        function getCurrentPoints() {
-            return {
-                p1: parseFloat(p1Slider.value),
-                p2: parseFloat(p2Slider.value),
-                p3: parseFloat(p3Slider.value),
-                p4: parseFloat(p4Slider.value)
-            };
-        }
-
-        // ----- 辅助函数：格式化显示 (最多4位小数，去掉多余尾零) -----
-        function formatDisplayValue(val) {
-            const factor = Math.pow(10, MAX_DECIMALS);
-            const rounded = Math.round(val * factor) / factor;
-            // 去掉末尾多余的 .0 或者保留必要小数
-            return rounded.toString();
-        }
-
-        // 根据用户输入精度保留小数位数 (最多4位)
-        function formatWithInputPrecision(rawStr, clampedVal) {
-            const dotIdx = rawStr.indexOf('.');
-            let decimals = 0;
-            if (dotIdx !== -1) {
-                decimals = rawStr.length - dotIdx - 1;
-            }
-            decimals = Math.min(decimals, MAX_DECIMALS);
-            const factor = Math.pow(10, decimals);
-            const rounded = Math.round(clampedVal * factor) / factor;
-            return rounded.toFixed(decimals);
-        }
+        const STEP_BTN_DELTA = 0.1;
 
         function clamp(value, min, max) {
             return Math.min(max, Math.max(min, value));
         }
 
-        // 获取曲线在 [0,1] 内的实际值域 (采样精细)
-        function getCurveYRange(p1, p2, p3, p4) {
+        function formatDisplay(val) {
+            const factor = Math.pow(10, MAX_DECIMALS);
+            const rounded = Math.round(val * factor) / factor;
+            return rounded.toString();
+        }
+
+        function formatWithPrecision(rawStr, clampedVal) {
+            const dotIdx = rawStr.indexOf('.');
+            let decimals = 0;
+            if (dotIdx !== -1) decimals = Math.min(rawStr.length - dotIdx - 1, MAX_DECIMALS);
+            const factor = Math.pow(10, decimals);
+            const rounded = Math.round(clampedVal * factor) / factor;
+            return rounded.toFixed(decimals);
+        }
+
+        // 二项式系数
+        function binomial(n, k) {
+            if (k < 0 || k > n) return 0;
+            let coeff = 1;
+            for (let i = 0; i < k; i++) {
+                coeff = coeff * (n - i) / (i + 1);
+            }
+            return coeff;
+        }
+
+        // 通用贝塞尔求值
+        function bezierEval(t, points) {
+            if (t <= 0) return points[0];
+            if (t >= 1) return points[points.length - 1];
+            const n = points.length - 1;
+            let result = 0;
+            for (let i = 0; i <= n; i++) {
+                const coeff = binomial(n, i);
+                const mt = 1 - t;
+                const term = coeff * Math.pow(mt, n - i) * Math.pow(t, i) * points[i];
+                result += term;
+            }
+            return result;
+        }
+
+        // 获取值域（采样优化）
+        function getCurveRange(points, samples = 220) {
             let minY = Infinity, maxY = -Infinity;
-            // 精细采样
-            for (let t = 0; t <= 1; t += 0.008) {
-                const y = cubicBezierY(t, p1, p2, p3, p4);
+            for (let i = 0; i <= samples; i++) {
+                const t = i / samples;
+                const y = bezierEval(t, points);
                 if (y < minY) minY = y;
                 if (y > maxY) maxY = y;
             }
-            // 确保端点准确
-            const yStart = cubicBezierY(0, p1, p2, p3, p4);
-            const yEnd = cubicBezierY(1, p1, p2, p3, p4);
-            minY = Math.min(minY, yStart, yEnd);
-            maxY = Math.max(maxY, yStart, yEnd);
-            // 轻微边界保护
+            const y0 = points[0];
+            const y1 = points[points.length-1];
+            minY = Math.min(minY, y0, y1);
+            maxY = Math.max(maxY, y0, y1);
             if (minY === maxY) {
-                minY = minY - 0.2;
-                maxY = maxY + 0.2;
+                minY -= 0.5;
+                maxY += 0.5;
             }
-            return { minY, maxY };
+            const margin = Math.max(0.2, (maxY - minY) * 0.1);
+            return { minY: minY - margin, maxY: maxY + margin };
         }
 
-        // 坐标映射
-        function getX(t) {
-            return pad + t * areaW;
-        }
+        // ---------- 优化版绘制器 (带 RAF 节流) ----------
+        class OptimizedBezierDrawer {
+            constructor(canvasId, pointsCount, defaultValues) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.W = this.canvas.width;
+                this.H = this.canvas.height;
+                this.pad = 45;
+                this.areaW = this.W - this.pad * 2;
+                this.areaH = this.H - this.pad * 2;
+                this.pointsCount = pointsCount;
+                this.points = [...defaultValues];
+                this.sliders = [];
+                this.inputs = [];
+                this.minusBtns = [];
+                this.plusBtns = [];
 
-        // 绘制坐标轴、网格、参考线，返回 mapY 函数 (基于当前y轴范围)
-        function drawAxis(yMin, yMax) {
-            ctx.clearRect(0, 0, W, H);
-            const mapY = (val) => H - pad - ((val - yMin) / (yMax - yMin)) * areaH;
-            
-            // 绘制网格 (垂直 t 轴)
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 1;
-            for (let i = 0; i <= 1; i += gridStep) {
-                const x = getX(i);
-                ctx.beginPath();
-                ctx.moveTo(x, pad);
-                ctx.lineTo(x, H - pad);
-                ctx.stroke();
+                // 性能优化: 绘制请求标志
+                this.drawRequested = false;
+                this.initUI();
+                this.attachEvents();
+                this.draw(); // 初始绘制
             }
-            // 水平网格 (动态)
-            const yStepRaw = (yMax - yMin) / 10;
-            for (let v = yMin; v <= yMax + 0.0001; v += yStepRaw) {
-                const y = mapY(v);
-                if (y >= pad && y <= H - pad) {
-                    ctx.beginPath();
-                    ctx.moveTo(pad, y);
-                    ctx.lineTo(W - pad, y);
-                    ctx.stroke();
+
+            initUI() {
+                let containerId = '';
+                if (this.pointsCount === 4) containerId = 'points4Container';
+                else if (this.pointsCount === 7) containerId = 'points7Container';
+                else containerId = 'points9Container';
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
+                for (let i = 0; i < this.pointsCount; i++) {
+                    const idx = i + 1;
+                    const row = document.createElement('div');
+                    row.className = 'slider-row';
+                    const labelSpan = document.createElement('label');
+                    labelSpan.textContent = `p${idx}`;
+                    const slider = document.createElement('input');
+                    slider.type = 'range';
+                    slider.min = MIN_VAL;
+                    slider.max = MAX_VAL;
+                    slider.step = 0.01;
+                    slider.value = this.points[i];
+                    const numInput = document.createElement('input');
+                    numInput.type = 'number';
+                    numInput.className = 'num-input';
+                    numInput.step = '0.1';
+                    numInput.min = MIN_VAL;
+                    numInput.max = MAX_VAL;
+                    numInput.value = formatDisplay(this.points[i]);
+                    const minusBtn = document.createElement('button');
+                    minusBtn.textContent = '−';
+                    minusBtn.className = 'step-btn';
+                    const plusBtn = document.createElement('button');
+                    plusBtn.textContent = '+';
+                    plusBtn.className = 'step-btn';
+                    
+                    row.appendChild(labelSpan);
+                    row.appendChild(slider);
+                    row.appendChild(numInput);
+                    row.appendChild(minusBtn);
+                    row.appendChild(plusBtn);
+                    container.appendChild(row);
+                    
+                    this.sliders.push(slider);
+                    this.inputs.push(numInput);
+                    this.minusBtns.push(minusBtn);
+                    this.plusBtns.push(plusBtn);
                 }
+                this.updateButtonsState();
             }
             
-            // 坐标轴 (黑色轴)
-            ctx.strokeStyle = '#64748b';
-            ctx.lineWidth = 1.8;
-            ctx.beginPath();
-            ctx.moveTo(pad, H - pad);
-            ctx.lineTo(W - pad, H - pad);
-            ctx.moveTo(pad, H - pad);
-            ctx.lineTo(pad, pad);
-            ctx.stroke();
-            
-            // X轴刻度标记和文字
-            ctx.fillStyle = '#334155';
-            ctx.font = '11px "Segoe UI", monospace';
-            ctx.textAlign = 'center';
-            for (let t = 0; t <= 1; t += gridStep) {
-                const x = getX(t);
-                ctx.beginPath();
-                ctx.moveTo(x, H - pad);
-                ctx.lineTo(x, H - pad + 5);
-                ctx.stroke();
-                ctx.fillText(t.toFixed(1), x, H - pad + 18);
-            }
-            
-            // Y轴动态刻度 (最佳间距)
-            ctx.textAlign = 'right';
-            const majorYVals = [];
-            let baseStep = 0.5;
-            if ((yMax - yMin) > 3) baseStep = 1.0;
-            if ((yMax - yMin) < 1.2) baseStep = 0.25;
-            let startVal = Math.floor(yMin / baseStep) * baseStep;
-            for (let v = startVal; v <= yMax + 0.001; v += baseStep) {
-                const rounded = Math.round(v * 10) / 10;
-                if (rounded >= yMin - 0.01 && rounded <= yMax + 0.01 && !majorYVals.includes(rounded))
-                    majorYVals.push(rounded);
-            }
-            if (yMin <= 0 && yMax >= 0 && !majorYVals.includes(0)) majorYVals.push(0);
-            if (yMin <= 1 && yMax >= 1 && !majorYVals.includes(1)) majorYVals.push(1);
-            majorYVals.sort((a,b)=>a-b);
-            
-            for (let v of majorYVals) {
-                const y = mapY(v);
-                if (y >= pad && y <= H - pad) {
-                    ctx.beginPath();
-                    ctx.moveTo(pad - 5, y);
-                    ctx.lineTo(pad, y);
-                    ctx.stroke();
-                    ctx.fillStyle = '#2c3e66';
-                    ctx.fillText(v.toFixed(v === Math.floor(v) ? 0 : 1), pad - 8, y + 4);
-                }
-            }
-            
-            // 虚线参考线 y=0 和 y=1 (高亮)
-            ctx.save();
-            ctx.setLineDash([6, 6]);
-            ctx.strokeStyle = '#f97316';
-            ctx.lineWidth = 1.2;
-            if (yMin <= 0 && yMax >= 0) {
-                const y0 = mapY(0);
-                ctx.beginPath();
-                ctx.moveTo(pad, y0);
-                ctx.lineTo(W - pad, y0);
-                ctx.stroke();
-                ctx.fillStyle = '#f97316';
-                ctx.font = '10px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText('y = 0', pad + 5, y0 - 3);
-            }
-            if (yMin <= 1 && yMax >= 1) {
-                const y1 = mapY(1);
-                ctx.beginPath();
-                ctx.moveTo(pad, y1);
-                ctx.lineTo(W - pad, y1);
-                ctx.stroke();
-                ctx.fillStyle = '#f97316';
-                ctx.fillText('y = 1', pad + 5, y1 - 3);
-            }
-            ctx.setLineDash([]);
-            ctx.restore();
-            
-            return { mapY, yMin, yMax };
-        }
-        
-        // 绘制曲线主体 + 采样点 + 起点终点 + 辅助标记
-        function drawCurve(p1, p2, p3, p4) {
-            const { minY, maxY } = getCurveYRange(p1, p2, p3, p4);
-            const range = maxY - minY;
-            const padding = Math.max(0.18, range * 0.12);
-            let yMin = minY - padding;
-            let yMax = maxY + padding;
-            // 保证至少包含 -0.2～1.2 范围，避免极端情况
-            yMin = Math.min(yMin, -0.25);
-            yMax = Math.max(yMax, 1.25);
-            
-            const { mapY } = drawAxis(yMin, yMax);
-            
-            // 绘制贝塞尔曲线 (高精度步进)
-            ctx.beginPath();
-            ctx.strokeStyle = '#3b82f6';
-            ctx.lineWidth = 2.8;
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            let first = true;
-            for (let t = 0; t <= 1; t += 0.004) {
-                const yVal = cubicBezierY(t, p1, p2, p3, p4);
-                const xPos = getX(t);
-                const yPos = mapY(yVal);
-                if (yPos >= pad - 12 && yPos <= H - pad + 12) {
-                    if (first) {
-                        ctx.moveTo(xPos, yPos);
-                        first = false;
-                    } else {
-                        ctx.lineTo(xPos, yPos);
-                    }
-                } else {
-                    first = true;
-                    ctx.moveTo(xPos, yPos);
-                }
-            }
-            ctx.stroke();
-            
-            // 采样点标记 (轻量可视化)
-            ctx.fillStyle = '#f97316';
-            for (let t2 = 0; t2 <= 1; t2 += 0.025) {
-                const yVal = cubicBezierY(t2, p1, p2, p3, p4);
-                const xPos = getX(t2);
-                const yPos = mapY(yVal);
-                if (yPos >= pad - 6 && yPos <= H - pad + 6) {
-                    ctx.beginPath();
-                    ctx.arc(xPos, yPos, 2.2, 0, Math.PI * 2);
-                    ctx.fillStyle = '#e67e22';
-                    ctx.fill();
-                }
-            }
-            
-            // 起点 & 终点 (强调)
-            const yStart = cubicBezierY(0, p1, p2, p3, p4);
-            const yEnd = cubicBezierY(1, p1, p2, p3, p4);
-            const startX = getX(0);
-            const startY = mapY(yStart);
-            const endX = getX(1);
-            const endY = mapY(yEnd);
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#0f172a';
-            ctx.beginPath();
-            ctx.arc(startX, startY, 5.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#b91c1c';
-            ctx.beginPath();
-            ctx.arc(endX, endY, 5.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.font = 'bold 11px "Segoe UI"';
-            ctx.fillStyle = '#1f2937';
-            ctx.fillText('起点', startX + 7, startY - 5);
-            ctx.fillStyle = '#b91c1c';
-            ctx.fillText('终点', endX + 7, endY - 5);
-            
-            // 辅助控制点视觉 (t=0.25, 0.5, 0.75)
-            ctx.font = '9px monospace';
-            for (let tCtrl of [0.25, 0.5, 0.75]) {
-                const yCtrl = cubicBezierY(tCtrl, p1, p2, p3, p4);
-                const xCtrl = getX(tCtrl);
-                const yCtrlPos = mapY(yCtrl);
-                if (yCtrlPos >= pad && yCtrlPos <= H - pad) {
-                    ctx.beginPath();
-                    ctx.arc(xCtrl, yCtrlPos, 3, 0, Math.PI * 2);
-                    ctx.fillStyle = '#8b5cf6';
-                    ctx.fill();
-                    ctx.fillStyle = '#475569';
-                    ctx.fillText(`t=${tCtrl}`, xCtrl + 5, yCtrlPos - 3);
-                }
-            }
-        }
-        
-        // ---------- UI 同步与按钮禁用管理 ----------
-        function getAssociatedButtons(inputElem) {
-            const row = inputElem.closest('.slider-row');
-            if (!row) return { minusBtn: null, plusBtn: null };
-            const btns = row.querySelectorAll('.step-btn');
-            return { minusBtn: btns[0], plusBtn: btns[1] };
-        }
-        
-        function updateButtonStateForInput(inputElem) {
-            const val = parseFloat(inputElem.value);
-            if (isNaN(val)) return;
-            const { minusBtn, plusBtn } = getAssociatedButtons(inputElem);
-            if (minusBtn) minusBtn.disabled = (val <= MIN_VAL);
-            if (plusBtn) plusBtn.disabled = (val >= MAX_VAL);
-        }
-        
-        function updateAllButtonsState() {
-            updateButtonStateForInput(p1Input);
-            updateButtonStateForInput(p2Input);
-            updateButtonStateForInput(p3Input);
-            updateButtonStateForInput(p4Input);
-        }
-        
-        // 从滑块同步到输入框 (保证显示值格式化) 并重绘
-        function syncFromSlidersAndDraw() {
-            const p1 = parseFloat(p1Slider.value);
-            const p2 = parseFloat(p2Slider.value);
-            const p3 = parseFloat(p3Slider.value);
-            const p4 = parseFloat(p4Slider.value);
-            
-            p1Input.value = formatDisplayValue(p1);
-            p2Input.value = formatDisplayValue(p2);
-            p3Input.value = formatDisplayValue(p3);
-            p4Input.value = formatDisplayValue(p4);
-            
-            drawCurve(p1, p2, p3, p4);
-            updateAllButtonsState();
-        }
-        
-        // 输入框实时同步到滑块 (不修改输入框显示内容，只驱动曲线)
-        function syncInputToSliderRealtime(inputElem, sliderElem) {
-            let raw = inputElem.value.trim();
-            if (raw === "" || raw === "-" || raw === "." || raw === "-.") return;
-            let val = parseFloat(raw);
-            if (isNaN(val)) return;
-            val = clamp(val, MIN_VAL, MAX_VAL);
-            sliderElem.value = val;
-            const points = getCurrentPoints();
-            drawCurve(points.p1, points.p2, points.p3, points.p4);
-            updateAllButtonsState();
-        }
-        
-        // 最终同步 (change/blur) 格式化输入框精度并修正范围
-        function syncInputToSliderFinal(inputElem, sliderElem) {
-            let raw = inputElem.value.trim();
-            if (raw === "" || raw === "-" || raw === "." || raw === "-.") {
-                // 无效恢复滑块值
-                const sliderVal = parseFloat(sliderElem.value);
-                inputElem.value = formatDisplayValue(sliderVal);
-                const points = getCurrentPoints();
-                drawCurve(points.p1, points.p2, points.p3, points.p4);
-                updateAllButtonsState();
-                return;
-            }
-            let val = parseFloat(raw);
-            if (isNaN(val)) {
-                const sliderVal = parseFloat(sliderElem.value);
-                inputElem.value = formatDisplayValue(sliderVal);
-                const points = getCurrentPoints();
-                drawCurve(points.p1, points.p2, points.p3, points.p4);
-                updateAllButtonsState();
-                return;
-            }
-            val = clamp(val, MIN_VAL, MAX_VAL);
-            sliderElem.value = val;
-            const formatted = formatWithInputPrecision(raw, val);
-            if (inputElem.value !== formatted) inputElem.value = formatted;
-            const points = getCurrentPoints();
-            drawCurve(points.p1, points.p2, points.p3, points.p4);
-            updateAllButtonsState();
-        }
-        
-        // 步进按钮逻辑 (支持 p1-p4)
-        function handleStepButtonClick(btn) {
-            const target = btn.getAttribute('data-target');
-            const delta = parseFloat(btn.getAttribute('data-delta'));
-            let inputElem, sliderElem;
-            if (target === 'p1') { inputElem = p1Input; sliderElem = p1Slider; }
-            else if (target === 'p2') { inputElem = p2Input; sliderElem = p2Slider; }
-            else if (target === 'p3') { inputElem = p3Input; sliderElem = p3Slider; }
-            else if (target === 'p4') { inputElem = p4Input; sliderElem = p4Slider; }
-            else return;
-            
-            let currentVal = parseFloat(inputElem.value);
-            if (isNaN(currentVal)) currentVal = parseFloat(sliderElem.value);
-            if (isNaN(currentVal)) currentVal = 0;
-            let newVal = currentVal + delta;
-            newVal = clamp(newVal, MIN_VAL, MAX_VAL);
-            const factor = Math.pow(10, MAX_DECIMALS);
-            newVal = Math.round(newVal * factor) / factor;
-            const displayStr = formatDisplayValue(newVal);
-            inputElem.value = displayStr;
-            sliderElem.value = newVal;
-            const points = getCurrentPoints();
-            drawCurve(points.p1, points.p2, points.p3, points.p4);
-            updateAllButtonsState();
-        }
-        
-        // ----- 事件绑定 -----
-        function bindEvents() {
-            // 滑块事件
-            p1Slider.addEventListener('input', syncFromSlidersAndDraw);
-            p2Slider.addEventListener('input', syncFromSlidersAndDraw);
-            p3Slider.addEventListener('input', syncFromSlidersAndDraw);
-            p4Slider.addEventListener('input', syncFromSlidersAndDraw);
-            
-            // 输入框实时 (input)
-            p1Input.addEventListener('input', () => syncInputToSliderRealtime(p1Input, p1Slider));
-            p2Input.addEventListener('input', () => syncInputToSliderRealtime(p2Input, p2Slider));
-            p3Input.addEventListener('input', () => syncInputToSliderRealtime(p3Input, p3Slider));
-            p4Input.addEventListener('input', () => syncInputToSliderRealtime(p4Input, p4Slider));
-            
-            // change & blur 最终格式化
-            p1Input.addEventListener('change', () => syncInputToSliderFinal(p1Input, p1Slider));
-            p2Input.addEventListener('change', () => syncInputToSliderFinal(p2Input, p2Slider));
-            p3Input.addEventListener('change', () => syncInputToSliderFinal(p3Input, p3Slider));
-            p4Input.addEventListener('change', () => syncInputToSliderFinal(p4Input, p4Slider));
-            
-            p1Input.addEventListener('blur', () => syncInputToSliderFinal(p1Input, p1Slider));
-            p2Input.addEventListener('blur', () => syncInputToSliderFinal(p2Input, p2Slider));
-            p3Input.addEventListener('blur', () => syncInputToSliderFinal(p3Input, p3Slider));
-            p4Input.addEventListener('blur', () => syncInputToSliderFinal(p4Input, p4Slider));
-            
-            // 步进按钮全局代理
-            const allStepBtns = document.querySelectorAll('.step-btn');
-            allStepBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    handleStepButtonClick(btn);
+            // 节流绘制核心
+            requestDraw() {
+                if (this.drawRequested) return;
+                this.drawRequested = true;
+                requestAnimationFrame(() => {
+                    this.drawRequested = false;
+                    this._performDraw();
                 });
-            });
+            }
+            
+            _performDraw() {
+                if (!this.ctx) return;
+                const pointsArray = this.points;
+                const { minY, maxY } = getCurveRange(pointsArray, 220);
+                let yMin = minY;
+                let yMax = maxY;
+                const expand = Math.max(0.2, (yMax - yMin) * 0.12);
+                yMin -= expand;
+                yMax += expand;
+                const mapY = (val) => this.H - this.pad - ((val - yMin) / (yMax - yMin)) * this.areaH;
+                this.drawAxes(yMin, yMax, mapY);
+                this.drawCurveLine(pointsArray, mapY);
+                this.drawMarkers(pointsArray, mapY);
+            }
+            
+            draw() {
+                this.requestDraw();
+            }
+            
+            updatePointsFromSliders() {
+                for (let i = 0; i < this.pointsCount; i++) {
+                    this.points[i] = parseFloat(this.sliders[i].value);
+                }
+                this.syncInputsFromPoints();
+                this.updateButtonsState();
+                this.draw();
+            }
+            
+            syncInputsFromPoints() {
+                for (let i = 0; i < this.pointsCount; i++) {
+                    const fmt = formatDisplay(this.points[i]);
+                    if (this.inputs[i].value !== fmt) this.inputs[i].value = fmt;
+                }
+            }
+            
+            updateButtonsState() {
+                for (let i = 0; i < this.pointsCount; i++) {
+                    const val = this.points[i];
+                    this.minusBtns[i].disabled = (val <= MIN_VAL + 0.0001);
+                    this.plusBtns[i].disabled = (val >= MAX_VAL - 0.0001);
+                }
+            }
+            
+            syncInputToSlider(idx) {
+                let raw = this.inputs[idx].value.trim();
+                if (raw === "" || raw === "-" || raw === "." || raw === "-.") return;
+                let val = parseFloat(raw);
+                if (isNaN(val)) return;
+                val = clamp(val, MIN_VAL, MAX_VAL);
+                if (this.sliders[idx].value != val) {
+                    this.sliders[idx].value = val;
+                    this.points[idx] = val;
+                }
+                this.updateButtonsState();
+                this.draw();
+            }
+            
+            syncInputFinal(idx) {
+                let raw = this.inputs[idx].value.trim();
+                const sliderVal = parseFloat(this.sliders[idx].value);
+                if (raw === "" || raw === "-" || raw === "." || raw === "-." || isNaN(parseFloat(raw))) {
+                    this.inputs[idx].value = formatDisplay(sliderVal);
+                    return;
+                }
+                let val = parseFloat(raw);
+                if (isNaN(val)) {
+                    this.inputs[idx].value = formatDisplay(sliderVal);
+                    return;
+                }
+                val = clamp(val, MIN_VAL, MAX_VAL);
+                this.sliders[idx].value = val;
+                this.points[idx] = val;
+                const formatted = formatWithPrecision(raw, val);
+                if (this.inputs[idx].value !== formatted) this.inputs[idx].value = formatted;
+                this.updateButtonsState();
+                this.draw();
+            }
+            
+            handleStep(idx, delta) {
+                let current = this.points[idx];
+                let newVal = current + delta;
+                newVal = clamp(newVal, MIN_VAL, MAX_VAL);
+                const factor = Math.pow(10, MAX_DECIMALS);
+                newVal = Math.round(newVal * factor) / factor;
+                this.sliders[idx].value = newVal;
+                this.points[idx] = newVal;
+                this.inputs[idx].value = formatDisplay(newVal);
+                this.updateButtonsState();
+                this.draw();
+            }
+            
+            attachEvents() {
+                for (let i = 0; i < this.pointsCount; i++) {
+                    this.sliders[i].addEventListener('input', (idx => () => {
+                        this.points[idx] = parseFloat(this.sliders[idx].value);
+                        this.syncInputsFromPoints();
+                        this.updateButtonsState();
+                        this.draw();     // 触发节流绘制
+                    })(i));
+                    
+                    this.inputs[i].addEventListener('input', (idx => () => {
+                        this.syncInputToSlider(idx);
+                    })(i));
+                    this.inputs[i].addEventListener('change', (idx => () => {
+                        this.syncInputFinal(idx);
+                    })(i));
+                    this.inputs[i].addEventListener('blur', (idx => () => {
+                        this.syncInputFinal(idx);
+                    })(i));
+                    this.minusBtns[i].addEventListener('click', (idx => () => {
+                        this.handleStep(idx, -STEP_BTN_DELTA);
+                    })(i));
+                    this.plusBtns[i].addEventListener('click', (idx => () => {
+                        this.handleStep(idx, STEP_BTN_DELTA);
+                    })(i));
+                }
+            }
+            
+            getX(t) {
+                return this.pad + t * this.areaW;
+            }
+            
+            drawAxes(yMin, yMax, mapY) {
+                const ctx = this.ctx;
+                const W = this.W, H = this.H, pad = this.pad;
+                ctx.clearRect(0, 0, W, H);
+                // 浅色网格
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 0.8;
+                for (let i = 0; i <= 1; i += 0.1) {
+                    const x = this.getX(i);
+                    ctx.beginPath();
+                    ctx.moveTo(x, pad);
+                    ctx.lineTo(x, H - pad);
+                    ctx.stroke();
+                }
+                const yStepCount = 12;
+                for (let i = 0; i <= yStepCount; i++) {
+                    const v = yMin + (yMax - yMin) * (i / yStepCount);
+                    const y = mapY(v);
+                    if (y >= pad && y <= H - pad) {
+                        ctx.beginPath();
+                        ctx.moveTo(pad, y);
+                        ctx.lineTo(W - pad, y);
+                        ctx.stroke();
+                    }
+                }
+                // 坐标轴
+                ctx.strokeStyle = '#6c86a3';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(pad, H - pad);
+                ctx.lineTo(W - pad, H - pad);
+                ctx.moveTo(pad, H - pad);
+                ctx.lineTo(pad, pad);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#2c3e66';
+                ctx.font = '11px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                for (let t = 0; t <= 1; t += 0.1) {
+                    const x = this.getX(t);
+                    ctx.beginPath();
+                    ctx.moveTo(x, H - pad);
+                    ctx.lineTo(x, H - pad + 5);
+                    ctx.stroke();
+                    ctx.fillText(t.toFixed(1), x, H - pad + 18);
+                }
+                // Y轴刻度
+                ctx.textAlign = 'right';
+                let stepY = this.autoNiceStep(yMin, yMax);
+                let start = Math.ceil(yMin / stepY) * stepY;
+                const yTicks = [];
+                for (let v = start; v <= yMax + 0.001; v += stepY) {
+                    const rounded = Math.round(v * 100) / 100;
+                    if (rounded >= yMin - 0.02 && rounded <= yMax + 0.02) yTicks.push(rounded);
+                }
+                if (yMin <= 0 && yMax >= 0 && !yTicks.includes(0)) yTicks.push(0);
+                if (yMin <= 1 && yMax >= 1 && !yTicks.includes(1)) yTicks.push(1);
+                yTicks.sort((a,b)=>a-b);
+                for (let v of yTicks) {
+                    const y = mapY(v);
+                    if (y >= pad && y <= H - pad) {
+                        ctx.beginPath();
+                        ctx.moveTo(pad - 5, y);
+                        ctx.lineTo(pad, y);
+                        ctx.stroke();
+                        ctx.fillStyle = '#f97316';
+                        ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 2), pad - 9, y + 4);
+                    }
+                }
+                // 虚线 y=0 , y=1
+                ctx.save();
+                ctx.setLineDash([6, 8]);
+                ctx.strokeStyle = '#faa45e';
+                ctx.lineWidth = 1;
+                if (yMin <= 0 && yMax >= 0) {
+                    const y0 = mapY(0);
+                    ctx.beginPath();
+                    ctx.moveTo(pad, y0);
+                    ctx.lineTo(W - pad, y0);
+                    ctx.stroke();
+                    ctx.fillStyle = '#e6782e';
+                    ctx.fillText('y=0', pad + 6, y0 - 3);
+                }
+                if (yMin <= 1 && yMax >= 1) {
+                    const y1 = mapY(1);
+                    ctx.beginPath();
+                    ctx.moveTo(pad, y1);
+                    ctx.lineTo(W - pad, y1);
+                    ctx.stroke();
+                    ctx.fillStyle = '#e6782e';
+                    ctx.fillText('y=1', pad + 6, y1 - 3);
+                }
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
+            
+            autoNiceStep(minV, maxV) {
+                const range = maxV - minV;
+                let step = Math.pow(10, Math.floor(Math.log10(range / 5)));
+                if (range / step > 8) step *= 2;
+                if (range / step < 3) step /= 2;
+                return Math.max(0.2, step);
+            }
+            
+            drawCurveLine(points, mapY) {
+                const ctx = this.ctx;
+                ctx.beginPath();
+                ctx.strokeStyle = '#f97316';
+                ctx.lineWidth = 2.6;
+                let first = true;
+                for (let t = 0; t <= 1; t += 0.003) {
+                    const yVal = bezierEval(t, points);
+                    const xPos = this.getX(t);
+                    const yPos = mapY(yVal);
+                    if (yPos >= this.pad - 20 && yPos <= this.H - this.pad + 20) {
+                        if (first) {
+                            ctx.moveTo(xPos, yPos);
+                            first = false;
+                        } else {
+                            ctx.lineTo(xPos, yPos);
+                        }
+                    } else {
+                        first = true;
+                        ctx.moveTo(xPos, yPos);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            drawMarkers(points, mapY) {
+                const ctx = this.ctx;
+                // 采样点
+                for (let t = 0; t <= 1; t += 0.025) {
+                    const yVal = bezierEval(t, points);
+                    const xPos = this.getX(t);
+                    const yPos = mapY(yVal);
+                    if (yPos >= this.pad - 5 && yPos <= this.H - this.pad + 5) {
+                        ctx.beginPath();
+                        ctx.arc(xPos, yPos, 2.2, 0, Math.PI * 2);
+                        ctx.fillStyle = '#3b82f6';
+                        ctx.fill();
+                    }
+                }
+                // 起点终点
+                const startVal = points[0];
+                const endVal = points[points.length-1];
+                const startX = this.getX(0);
+                const startY = mapY(startVal);
+                const endX = this.getX(1);
+                const endY = mapY(endVal);
+                ctx.fillStyle = '#1e5691';
+                ctx.beginPath();
+                ctx.arc(startX, startY, 6, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#dc5f1f';
+                ctx.beginPath();
+                ctx.arc(endX, endY, 6, 0, Math.PI*2);
+                ctx.fill();
+                ctx.font = 'bold 10px monospace';
+                ctx.fillStyle = '#2c3e66';
+                ctx.fillText('Start', startX+8, startY-5);
+                ctx.fillStyle = '#b4511a';
+                ctx.fillText('End', endX+8, endY-5);
+                // 辅助点
+                for (let tRef of [0.25, 0.5, 0.75]) {
+                    const yVal = bezierEval(tRef, points);
+                    const xPos = this.getX(tRef);
+                    const yPos = mapY(yVal);
+                    if (yPos >= this.pad && yPos <= this.H - this.pad) {
+                        ctx.beginPath();
+                        ctx.arc(xPos, yPos, 3.2, 0, Math.PI*2);
+                        ctx.fillStyle = '#a855f7';
+                        ctx.fill();
+                        ctx.fillStyle = '#334155';
+                        ctx.font = '8px monospace';
+                        ctx.fillText(`${tRef}`, xPos+6, yPos-3);
+                    }
+                }
+            }
         }
         
-        // 初始化默认值: p1=0, p2=0, p3=1, p4=1
-        function initDefaults() {
-            p1Slider.value = '0'; p1Input.value = '0';
-            p2Slider.value = '0'; p2Input.value = '0';
-            p3Slider.value = '1'; p3Input.value = '1';
-            p4Slider.value = '1'; p4Input.value = '1';
-            updateAllButtonsState();
-            drawCurve(0, 0, 1, 1);
-        }
+        // 默认调皮但可展示范围的值
+        const defaultPoints4 = [-1.2, 0.3, 2.2, 2.7];
+        const defaultPoints7 = [-1.0, -0.2, 1.4, 2.4, 1.9, 2.3, 2.8];
+        const defaultPoints9 = [-1.5, -0.7, 0.3, 1.8, 2.9, 1.3, 2.5, 1.9, 2.9];
         
-        bindEvents();
-        initDefaults();
+        // 实例化 (所有绘图自动节流)
+        const drawer4 = new OptimizedBezierDrawer('bezier4Canvas', 4, defaultPoints4);
+        const drawer7 = new OptimizedBezierDrawer('bezier7Canvas', 7, defaultPoints7);
+        const drawer9 = new OptimizedBezierDrawer('bezier9Canvas', 9, defaultPoints9);
+        
+        window.bezierTools = { drawer4, drawer7, drawer9 };
     })();
 </script>
 </body>
