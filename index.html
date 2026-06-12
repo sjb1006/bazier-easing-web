@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>贝塞尔实验室 · 流畅优化版 | 4/7/9控制点 范围-2~3</title>
+    <title>贝塞尔实验室 · 纵轴舒展版 | 4/7/9控制点 范围-2~3</title>
     <style>
         * {
             margin: 0;
@@ -232,10 +232,10 @@
             <h2>🎯 四控制点 · 三次贝塞尔 <small>范围 -2 ~ 3</small></h2>
             <p>B(t) = (1−t)³·p₁ + 3(1−t)²·t·p₂ + 3(1−t)·t²·p₃ + t³·p₄</p>
         </div>
-        <canvas id="bezier4Canvas" width="720" height="450" style="max-width:100%; height:auto; aspect-ratio:720/450"></canvas>
+        <canvas id="bezier4Canvas" width="720" height="580" style="max-width:100%; height:auto; aspect-ratio:720/580"></canvas>
         <div class="control">
             <div class="slider-grid" id="points4Container"></div>
-            <div class="desc">⚡ 横轴: t (0→1) &nbsp;|&nbsp; 纵轴动态适配 &nbsp;|&nbsp; 控制点 [-2 , 3] ，步进 0.1</div>
+            <div class="desc">⚡ 横轴: t (0→1) &nbsp;|&nbsp; 纵轴舒展（高度增加，每格间距≈原1.5倍）&nbsp;|&nbsp; 控制点 [-2 , 3]</div>
             <div class="warning">✨ 超出 [0,1] 区域实现弹性/过冲 | 滑块 / 数字 / ±按钮实时调节</div>
         </div>
     </div>
@@ -246,7 +246,7 @@
             <h2>🌀 七控制点 · 六次贝塞尔 <small>高自由度</small></h2>
             <p>B(t) = Σ C(6,i)·(1−t)^(6−i)·t^i·pᵢ₊₁</p>
         </div>
-        <canvas id="bezier7Canvas" width="720" height="450" style="max-width:100%; height:auto; aspect-ratio:720/450"></canvas>
+        <canvas id="bezier7Canvas" width="720" height="580" style="max-width:100%; height:auto; aspect-ratio:720/580"></canvas>
         <div class="control">
             <div class="slider-grid" id="points7Container"></div>
             <div class="desc">🎛️ 六次贝塞尔塑造复杂波形，适合高级动画弹性</div>
@@ -259,7 +259,7 @@
             <h2>💀 九控制点 · 八次贝塞尔 <small>极限疯狂</small></h2>
             <p>B(t) = Σ C(8,i)·(1−t)^(8−i)·t^i·pᵢ₊₁ &nbsp; 九重扭曲</p>
         </div>
-        <canvas id="bezier9Canvas" width="720" height="450" style="max-width:100%; height:auto; aspect-ratio:720/450"></canvas>
+        <canvas id="bezier9Canvas" width="720" height="580" style="max-width:100%; height:auto; aspect-ratio:720/580"></canvas>
         <div class="control">
             <div class="slider-grid" id="points9Container"></div>
             <div class="desc">🔥 八次贝塞尔：9个独立控制点，制造极速往返、多次过冲</div>
@@ -341,14 +341,14 @@
             return { minY: minY - margin, maxY: maxY + margin };
         }
 
-        // ---------- 优化版绘制器 (带 RAF 节流) ----------
+        // ---------- 优化版绘制器 (带 RAF 节流，纵轴舒展) ----------
         class OptimizedBezierDrawer {
             constructor(canvasId, pointsCount, defaultValues) {
                 this.canvas = document.getElementById(canvasId);
                 this.ctx = this.canvas.getContext('2d');
                 this.W = this.canvas.width;
                 this.H = this.canvas.height;
-                this.pad = 45;
+                this.pad = 50;          // 边距稍微增加，让纵轴呼吸空间
                 this.areaW = this.W - this.pad * 2;
                 this.areaH = this.H - this.pad * 2;
                 this.pointsCount = pointsCount;
@@ -728,9 +728,9 @@
         }
         
         // 默认调皮但可展示范围的值
-        const defaultPoints4 = [-1.2, 0.3, 2.2, 2.7];
-        const defaultPoints7 = [-1.0, -0.2, 1.4, 2.4, 1.9, 2.3, 2.8];
-        const defaultPoints9 = [-1.5, -0.7, 0.3, 1.8, 2.9, 1.3, 2.5, 1.9, 2.9];
+        const defaultPoints4 = [0, 0.3, 1, 1];
+        const defaultPoints7 = [0, -0.2, 1.4, 2.4, 1.9, 2.3, 2.8];
+        const defaultPoints9 = [0, -0.7, 0.3, 1.8, 2.9, 1.3, 2.5, 1.9, 2.9];
         
         // 实例化 (所有绘图自动节流)
         const drawer4 = new OptimizedBezierDrawer('bezier4Canvas', 4, defaultPoints4);
