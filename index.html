@@ -3,229 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>贝塞尔缓动 (p1 p2范围 -1~2 | 4位小数 | 步进0.1)</title>
+    <title>四控制点贝塞尔缓动 (p1 p2 p3 p4 范围 -1~2 | 4位小数 | 步进0.1)</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: sans-serif;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
         body {
-            background: #f3f3f3;
-            padding: 20px;
+            background: #f0f2f5;
+            padding: 24px 20px;
         }
         .wrap {
-            max-width: 720px;
+            max-width: 780px;
             margin: 0 auto;
         }
         canvas {
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            background: #ffffff;
+            border: 1px solid #cfdde6;
+            border-radius: 14px;
             display: block;
-            margin-bottom: 25px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         }
         .control {
-            background: #fff;
-            padding: 18px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            background: #ffffff;
+            padding: 20px 22px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.02);
         }
         .slider-row {
-            margin: 15px 0;
+            margin: 16px 0;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
         label {
-            width: 60px;
+            width: 48px;
             font-size: 15px;
-            font-weight: 500;
+            font-weight: 600;
+            color: #1e293b;
             flex-shrink: 0;
+            letter-spacing: 0.5px;
         }
         input[type="range"] {
             flex: 1;
-            max-width: 360px;
+            min-width: 200px;
+            max-width: 380px;
+            height: 4px;
+            border-radius: 10px;
+            background: #e2e8f0;
+        }
+        input[type="range"]:focus {
+            outline: none;
         }
         .num-input {
-            width: 90px;
+            width: 95px;
             text-align: center;
             font-size: 14px;
-            color: #222;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 5px 6px;
+            font-weight: 500;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 6px 8px;
             background: #fff;
-            cursor: text;
-            font-family: monospace;
+            font-family: 'JetBrains Mono', monospace, 'SF Mono';
             flex-shrink: 0;
+            transition: 0.1s;
         }
         .num-input:focus {
             outline: none;
-            border-color: #2980b9;
-            box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.2);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
         .step-btn {
-            width: 28px;
-            height: 28px;
-            border: 1px solid #bbb;
-            border-radius: 4px;
-            background: #f7f7f7;
+            width: 32px;
+            height: 32px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #f8fafc;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 600;
-            color: #444;
-            display: flex;
+            color: #1e293b;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             user-select: none;
-            -webkit-user-select: none;
-            transition: background 0.12s, border-color 0.12s;
+            transition: all 0.1s ease;
             line-height: 1;
-            padding: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
         .step-btn:hover {
-            background: #e8e8e8;
-            border-color: #999;
+            background: #eef2ff;
+            border-color: #94a3b8;
+            transform: scale(0.97);
         }
         .step-btn:active {
-            background: #d4d4d4;
-            border-color: #888;
+            background: #e2e8f0;
+            transform: scale(0.95);
         }
         .step-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
+            transform: none;
             pointer-events: none;
+            background: #f1f5f9;
         }
         .desc {
-            margin-top: 12px;
+            margin-top: 18px;
             font-size: 13px;
-            color: #666;
+            background: #f8fafc;
+            padding: 12px 14px;
+            border-radius: 16px;
+            color: #1e293b;
             line-height: 1.5;
+            border-left: 3px solid #3b82f6;
         }
         .warning {
-            margin-top: 10px;
+            margin-top: 12px;
+            font-size: 12.5px;
+            background: #fffbeb;
+            border-left: 3px solid #f59e0b;
+            padding: 10px 14px;
+            border-radius: 14px;
+            color: #b45309;
+        }
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            border-radius: 40px;
+            padding: 2px 10px;
             font-size: 12px;
-            color: #e67e22;
-            background: #fef5e7;
-            padding: 6px 10px;
-            border-radius: 4px;
+            font-weight: 500;
+            color: #1e40af;
+            margin-right: 10px;
+        }
+        @media (max-width: 640px) {
+            .slider-row {
+                gap: 8px;
+            }
+            .num-input {
+                width: 78px;
+                font-size: 12px;
+            }
+            .step-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 16px;
+            }
+            label {
+                width: 40px;
+            }
+            .control {
+                padding: 16px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="wrap">
-        <canvas id="curveCanvas" width="650" height="450"></canvas>
+<div class="wrap">
+    <canvas id="curveCanvas" width="680" height="460" style="width:100%; height:auto; max-width:680px; aspect-ratio:680/460"></canvas>
 
-        <div class="control">
-            <div class="slider-row">
-                <label>p1</label>
-                <input type="range" id="p1" min="-1" max="2" step="0.01" value="0.2">
-                <input type="number" id="p1Input" class="num-input" step="0.1" min="-1" max="2" value="0.2">
-                <button class="step-btn" data-target="p1" data-delta="-0.1" title="减小 p1（步进 0.1）">−</button>
-                <button class="step-btn" data-target="p1" data-delta="0.1" title="增大 p1（步进 0.1）">+</button>
-            </div>
-            <div class="slider-row">
-                <label>p2</label>
-                <input type="range" id="p2" min="-1" max="2" step="0.01" value="0.8">
-                <input type="number" id="p2Input" class="num-input" step="0.1" min="-1" max="2" value="0.8">
-                <button class="step-btn" data-target="p2" data-delta="-0.1" title="减小 p2（步进 0.1）">−</button>
-                <button class="step-btn" data-target="p2" data-delta="0.1" title="增大 p2（步进 0.1）">+</button>
-            </div>
-            <div class="desc">
-                计算公式：y = 3·t·(1-t)²·p1 + 3·t²·(1-t)·p2 + t³<br>
-                横轴：时间 t (0 → 1) &nbsp; 纵轴：缓动输出值 (可超出 0-1 范围)
-            </div>
-            <div class="warning">
-                ⚠️ p1, p2 范围 -1 ~ 2，曲线可能超出 [0,1] 边界（回弹/过冲效果）<br>
-                ✏️ 可直接输入数字，或使用右侧 +/− 按钮以 0.1 为步长调节（单击只变动一次）<br>
-                🔢 输入时曲线实时变化；数值最多精确到 4 位小数，输入几位就显示几位
-            </div>
+    <div class="control">
+        <!-- p1 控制点 -->
+        <div class="slider-row">
+            <label>p₁</label>
+            <input type="range" id="p1" min="-1" max="2" step="0.01" value="0">
+            <input type="number" id="p1Input" class="num-input" step="0.1" min="-1" max="2" value="0">
+            <button class="step-btn" data-target="p1" data-delta="-0.1" title="减小 p₁ (步进 0.1)">−</button>
+            <button class="step-btn" data-target="p1" data-delta="0.1" title="增大 p₁ (步进 0.1)">+</button>
+        </div>
+        <!-- p2 控制点 -->
+        <div class="slider-row">
+            <label>p₂</label>
+            <input type="range" id="p2" min="-1" max="2" step="0.01" value="0">
+            <input type="number" id="p2Input" class="num-input" step="0.1" min="-1" max="2" value="0">
+            <button class="step-btn" data-target="p2" data-delta="-0.1" title="减小 p₂ (步进 0.1)">−</button>
+            <button class="step-btn" data-target="p2" data-delta="0.1" title="增大 p₂ (步进 0.1)">+</button>
+        </div>
+        <!-- p3 控制点 (新增) -->
+        <div class="slider-row">
+            <label>p₃</label>
+            <input type="range" id="p3" min="-1" max="2" step="0.01" value="1">
+            <input type="number" id="p3Input" class="num-input" step="0.1" min="-1" max="2" value="1">
+            <button class="step-btn" data-target="p3" data-delta="-0.1" title="减小 p₃ (步进 0.1)">−</button>
+            <button class="step-btn" data-target="p3" data-delta="0.1" title="增大 p₃ (步进 0.1)">+</button>
+        </div>
+        <!-- p4 控制点 -->
+        <div class="slider-row">
+            <label>p₄</label>
+            <input type="range" id="p4" min="-1" max="2" step="0.01" value="1">
+            <input type="number" id="p4Input" class="num-input" step="0.1" min="-1" max="2" value="1">
+            <button class="step-btn" data-target="p4" data-delta="-0.1" title="减小 p₄ (步进 0.1)">−</button>
+            <button class="step-btn" data-target="p4" data-delta="0.1" title="增大 p₄ (步进 0.1)">+</button>
+        </div>
+
+        <div class="desc">
+            <span class="badge">📐 完整三次贝塞尔</span> 
+            <strong>公式：</strong> B(t) = (1−t)³·p₁ + 3(1−t)²·t·p₂ + 3(1−t)·t²·p₃ + t³·p₄ &nbsp;&nbsp; ( t ∈ [0,1] )<br>
+            📌 横轴为时间 t (0 → 1) &nbsp; | &nbsp; 纵轴为缓动输出值（可超出 0–1，回弹/过冲效果）
+        </div>
+        <div class="warning">
+            ⚠️ 四个控制点范围均为 <strong>[-1, 2]</strong>，曲线可能超出常规边界（弹性/夸张过渡）<br>
+            ✏️ 可直接输入数字，或使用右侧 <strong>+/− 按钮</strong> 以 0.1 为步长微调 (单击变动一次)<br>
+            🔢 数值保留最多 4 位小数，输入几位显示几位，曲线实时响应
         </div>
     </div>
+</div>
 
-    <script>
+<script>
+    (function(){
+        // ----- DOM 元素 -----
         const canvas = document.getElementById('curveCanvas');
         const ctx = canvas.getContext('2d');
         const W = canvas.width;
         const H = canvas.height;
 
-        const pad = 40;
+        // 边距 & 绘图区
+        const pad = 42;
         const areaW = W - pad * 2;
         const areaH = H - pad * 2;
         const gridStep = 0.1;
 
+        // 控制点滑块和输入框
         const p1Slider = document.getElementById('p1');
         const p2Slider = document.getElementById('p2');
+        const p3Slider = document.getElementById('p3');
+        const p4Slider = document.getElementById('p4');
+        
         const p1Input = document.getElementById('p1Input');
         const p2Input = document.getElementById('p2Input');
+        const p3Input = document.getElementById('p3Input');
+        const p4Input = document.getElementById('p4Input');
 
+        // 全局范围限制
         const MIN_VAL = -1;
         const MAX_VAL = 2;
         const MAX_DECIMALS = 4;
         const BUTTON_STEP = 0.1;
 
-        // 所有步进按钮
-        const allStepBtns = document.querySelectorAll('.step-btn');
+        // ========= 核心贝塞尔函数 (符合题目要求的函数签名) =========
+        // 标准三次贝塞尔求值: 给定 t (0~1) 和四个控制点 p1~p4，返回纵坐标 y
+        function cubicBezierY(t, p1, p2, p3, p4) {
+            if (t <= 0) return p1;
+            if (t >= 1) return p4;
+            const mt = 1 - t;
+            const mt2 = mt * mt;
+            const t2 = t * t;
+            const mt3 = mt2 * mt;
+            const t3 = t2 * t;
+            // B(t) = (1-t)³·p1 + 3·(1-t)²·t·p2 + 3·(1-t)·t²·p3 + t³·p4
+            return mt3 * p1 + 3.0 * mt2 * t * p2 + 3.0 * mt * t2 * p3 + t3 * p4;
+        }
+
+        // 题目要求的完整函数 (timer/length 风格，内部调用标准贝塞尔)
+        // 外部可直接使用，用于满足题设代码形式。绘图时使用更直接的 cubicBezierY。
+        window.scrEaseOutCubic = function(timer, length, p1, p2, p3, p4) {
+            let t = timer / length;
+            if (t < 0) t = 0;
+            if (t > 1) t = 1;
+            return cubicBezierY(t, p1, p2, p3, p4);
+        };
+
+        // 获取当前所有控制点数值 (从滑块读取)
+        function getCurrentPoints() {
+            return {
+                p1: parseFloat(p1Slider.value),
+                p2: parseFloat(p2Slider.value),
+                p3: parseFloat(p3Slider.value),
+                p4: parseFloat(p4Slider.value)
+            };
+        }
+
+        // ----- 辅助函数：格式化显示 (最多4位小数，去掉多余尾零) -----
+        function formatDisplayValue(val) {
+            const factor = Math.pow(10, MAX_DECIMALS);
+            const rounded = Math.round(val * factor) / factor;
+            // 去掉末尾多余的 .0 或者保留必要小数
+            return rounded.toString();
+        }
+
+        // 根据用户输入精度保留小数位数 (最多4位)
+        function formatWithInputPrecision(rawStr, clampedVal) {
+            const dotIdx = rawStr.indexOf('.');
+            let decimals = 0;
+            if (dotIdx !== -1) {
+                decimals = rawStr.length - dotIdx - 1;
+            }
+            decimals = Math.min(decimals, MAX_DECIMALS);
+            const factor = Math.pow(10, decimals);
+            const rounded = Math.round(clampedVal * factor) / factor;
+            return rounded.toFixed(decimals);
+        }
 
         function clamp(value, min, max) {
             return Math.min(max, Math.max(min, value));
         }
 
-        // 格式化显示值：四舍五入到最多4位小数，去掉尾部零
-        function formatDisplayValue(val) {
-            const factor = Math.pow(10, MAX_DECIMALS);
-            const rounded = Math.round(val * factor) / factor;
-            return rounded.toString();
-        }
-
-        // 在 blur/change 时保留用户输入的精度（最多4位小数）
-        function formatWithInputPrecision(rawStr, val) {
-            val = clamp(val, MIN_VAL, MAX_VAL);
-            const dotIndex = rawStr.indexOf('.');
-            let decimals = 0;
-            if (dotIndex !== -1) {
-                decimals = rawStr.length - dotIndex - 1;
+        // 获取曲线在 [0,1] 内的实际值域 (采样精细)
+        function getCurveYRange(p1, p2, p3, p4) {
+            let minY = Infinity, maxY = -Infinity;
+            // 精细采样
+            for (let t = 0; t <= 1; t += 0.008) {
+                const y = cubicBezierY(t, p1, p2, p3, p4);
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
             }
-            decimals = Math.min(decimals, MAX_DECIMALS);
-            const factor = Math.pow(10, decimals);
-            const rounded = Math.round(val * factor) / factor;
-            return rounded.toFixed(decimals);
+            // 确保端点准确
+            const yStart = cubicBezierY(0, p1, p2, p3, p4);
+            const yEnd = cubicBezierY(1, p1, p2, p3, p4);
+            minY = Math.min(minY, yStart, yEnd);
+            maxY = Math.max(maxY, yStart, yEnd);
+            // 轻微边界保护
+            if (minY === maxY) {
+                minY = minY - 0.2;
+                maxY = maxY + 0.2;
+            }
+            return { minY, maxY };
         }
 
-        // 核心公式
-        function calcEase(t, p1, p2) {
-            const omt = 1 - t;
-            return 3 * t * omt * omt * p1 + 3 * t * t * omt * p2 + t * t * t;
-        }
-
+        // 坐标映射
         function getX(t) {
             return pad + t * areaW;
         }
 
-        function getCurveYRange(p1, p2) {
-            let minY = Infinity,
-                maxY = -Infinity;
-            for (let t = 0; t <= 1; t += 0.01) {
-                const y = calcEase(t, p1, p2);
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
-            }
-            const yStart = calcEase(0, p1, p2);
-            const yEnd = calcEase(1, p1, p2);
-            minY = Math.min(minY, yStart, yEnd);
-            maxY = Math.max(maxY, yStart, yEnd);
-            return { minY, maxY };
-        }
-
+        // 绘制坐标轴、网格、参考线，返回 mapY 函数 (基于当前y轴范围)
         function drawAxis(yMin, yMax) {
             ctx.clearRect(0, 0, W, H);
             const mapY = (val) => H - pad - ((val - yMin) / (yMax - yMin)) * areaH;
-
-            // 网格
-            ctx.strokeStyle = '#e5e5e5';
+            
+            // 绘制网格 (垂直 t 轴)
+            ctx.strokeStyle = '#e2e8f0';
             ctx.lineWidth = 1;
             for (let i = 0; i <= 1; i += gridStep) {
                 const x = getX(i);
@@ -234,8 +347,9 @@
                 ctx.lineTo(x, H - pad);
                 ctx.stroke();
             }
-            const yStep = (yMax - yMin) / 10;
-            for (let v = yMin; v <= yMax + 0.001; v += yStep) {
+            // 水平网格 (动态)
+            const yStepRaw = (yMax - yMin) / 10;
+            for (let v = yMin; v <= yMax + 0.0001; v += yStepRaw) {
                 const y = mapY(v);
                 if (y >= pad && y <= H - pad) {
                     ctx.beginPath();
@@ -244,20 +358,20 @@
                     ctx.stroke();
                 }
             }
-
-            // 坐标轴
-            ctx.strokeStyle = '#999';
-            ctx.lineWidth = 1.5;
+            
+            // 坐标轴 (黑色轴)
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1.8;
             ctx.beginPath();
             ctx.moveTo(pad, H - pad);
             ctx.lineTo(W - pad, H - pad);
             ctx.moveTo(pad, H - pad);
             ctx.lineTo(pad, pad);
             ctx.stroke();
-
-            // X轴刻度
-            ctx.fillStyle = '#555';
-            ctx.font = '11px sans-serif';
+            
+            // X轴刻度标记和文字
+            ctx.fillStyle = '#334155';
+            ctx.font = '11px "Segoe UI", monospace';
             ctx.textAlign = 'center';
             for (let t = 0; t <= 1; t += gridStep) {
                 const x = getX(t);
@@ -267,18 +381,23 @@
                 ctx.stroke();
                 ctx.fillText(t.toFixed(1), x, H - pad + 18);
             }
-
-            // Y轴动态刻度
+            
+            // Y轴动态刻度 (最佳间距)
             ctx.textAlign = 'right';
             const majorYVals = [];
-            for (let v = Math.floor(yMin * 2) / 2; v <= Math.ceil(yMax * 2) / 2 + 0.1; v += 0.5) {
+            let baseStep = 0.5;
+            if ((yMax - yMin) > 3) baseStep = 1.0;
+            if ((yMax - yMin) < 1.2) baseStep = 0.25;
+            let startVal = Math.floor(yMin / baseStep) * baseStep;
+            for (let v = startVal; v <= yMax + 0.001; v += baseStep) {
                 const rounded = Math.round(v * 10) / 10;
                 if (rounded >= yMin - 0.01 && rounded <= yMax + 0.01 && !majorYVals.includes(rounded))
                     majorYVals.push(rounded);
             }
             if (yMin <= 0 && yMax >= 0 && !majorYVals.includes(0)) majorYVals.push(0);
             if (yMin <= 1 && yMax >= 1 && !majorYVals.includes(1)) majorYVals.push(1);
-            majorYVals.sort((a, b) => a - b);
+            majorYVals.sort((a,b)=>a-b);
+            
             for (let v of majorYVals) {
                 const y = mapY(v);
                 if (y >= pad && y <= H - pad) {
@@ -286,25 +405,26 @@
                     ctx.moveTo(pad - 5, y);
                     ctx.lineTo(pad, y);
                     ctx.stroke();
-                    ctx.fillText(v.toFixed(1), pad - 8, y + 4);
+                    ctx.fillStyle = '#2c3e66';
+                    ctx.fillText(v.toFixed(v === Math.floor(v) ? 0 : 1), pad - 8, y + 4);
                 }
             }
-
-            // 参考线 y=0, y=1
+            
+            // 虚线参考线 y=0 和 y=1 (高亮)
             ctx.save();
-            ctx.setLineDash([5, 5]);
-            ctx.strokeStyle = '#ff9999';
-            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = '#f97316';
+            ctx.lineWidth = 1.2;
             if (yMin <= 0 && yMax >= 0) {
                 const y0 = mapY(0);
                 ctx.beginPath();
                 ctx.moveTo(pad, y0);
                 ctx.lineTo(W - pad, y0);
                 ctx.stroke();
-                ctx.fillStyle = '#ff8888';
+                ctx.fillStyle = '#f97316';
                 ctx.font = '10px sans-serif';
                 ctx.textAlign = 'left';
-                ctx.fillText('y=0', pad + 5, y0 - 2);
+                ctx.fillText('y = 0', pad + 5, y0 - 3);
             }
             if (yMin <= 1 && yMax >= 1) {
                 const y1 = mapY(1);
@@ -312,137 +432,146 @@
                 ctx.moveTo(pad, y1);
                 ctx.lineTo(W - pad, y1);
                 ctx.stroke();
-                ctx.fillStyle = '#ff8888';
-                ctx.fillText('y=1', pad + 5, y1 - 2);
+                ctx.fillStyle = '#f97316';
+                ctx.fillText('y = 1', pad + 5, y1 - 3);
             }
             ctx.setLineDash([]);
             ctx.restore();
-
-            return { mapY };
+            
+            return { mapY, yMin, yMax };
         }
-
-        function drawCurve(p1, p2) {
-            const { minY, maxY } = getCurveYRange(p1, p2);
+        
+        // 绘制曲线主体 + 采样点 + 起点终点 + 辅助标记
+        function drawCurve(p1, p2, p3, p4) {
+            const { minY, maxY } = getCurveYRange(p1, p2, p3, p4);
             const range = maxY - minY;
-            const padding = Math.max(0.15, range * 0.15);
-            const yMin = Math.min(-0.2, minY - padding);
-            const yMax = Math.max(1.2, maxY + padding);
-
-            drawAxis(yMin, yMax);
-
-            const getYCustom = (val) => H - pad - ((val - yMin) / (yMax - yMin)) * areaH;
-
-            ctx.strokeStyle = '#2980b9';
-            ctx.lineWidth = 2.5;
+            const padding = Math.max(0.18, range * 0.12);
+            let yMin = minY - padding;
+            let yMax = maxY + padding;
+            // 保证至少包含 -0.2～1.2 范围，避免极端情况
+            yMin = Math.min(yMin, -0.25);
+            yMax = Math.max(yMax, 1.25);
+            
+            const { mapY } = drawAxis(yMin, yMax);
+            
+            // 绘制贝塞尔曲线 (高精度步进)
             ctx.beginPath();
-            let t = 0;
-            let isFirst = true;
-            while (t <= 1) {
-                const y = calcEase(t, p1, p2);
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2.8;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            let first = true;
+            for (let t = 0; t <= 1; t += 0.004) {
+                const yVal = cubicBezierY(t, p1, p2, p3, p4);
                 const xPos = getX(t);
-                const yPos = getYCustom(y);
-                if (yPos >= pad - 10 && yPos <= H - pad + 10) {
-                    if (isFirst) {
+                const yPos = mapY(yVal);
+                if (yPos >= pad - 12 && yPos <= H - pad + 12) {
+                    if (first) {
                         ctx.moveTo(xPos, yPos);
-                        isFirst = false;
+                        first = false;
                     } else {
                         ctx.lineTo(xPos, yPos);
                     }
                 } else {
-                    isFirst = true;
+                    first = true;
                     ctx.moveTo(xPos, yPos);
                 }
-                t += 0.004;
             }
             ctx.stroke();
-
-            // 采样点
-            ctx.fillStyle = '#e67e22';
+            
+            // 采样点标记 (轻量可视化)
+            ctx.fillStyle = '#f97316';
             for (let t2 = 0; t2 <= 1; t2 += 0.025) {
-                const y = calcEase(t2, p1, p2);
+                const yVal = cubicBezierY(t2, p1, p2, p3, p4);
                 const xPos = getX(t2);
-                const yPos = getYCustom(y);
-                if (yPos >= pad - 5 && yPos <= H - pad + 5) {
+                const yPos = mapY(yVal);
+                if (yPos >= pad - 6 && yPos <= H - pad + 6) {
                     ctx.beginPath();
-                    ctx.arc(xPos, yPos, 2, 0, Math.PI * 2);
+                    ctx.arc(xPos, yPos, 2.2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#e67e22';
                     ctx.fill();
                 }
             }
-
-            // 起点 & 终点
-            const yStart = calcEase(0, p1, p2);
-            const yEnd = calcEase(1, p1, p2);
+            
+            // 起点 & 终点 (强调)
+            const yStart = cubicBezierY(0, p1, p2, p3, p4);
+            const yEnd = cubicBezierY(1, p1, p2, p3, p4);
             const startX = getX(0);
-            const startY = getYCustom(yStart);
+            const startY = mapY(yStart);
             const endX = getX(1);
-            const endY = getYCustom(yEnd);
-            ctx.fillStyle = '#2c3e50';
+            const endY = mapY(yEnd);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#0f172a';
             ctx.beginPath();
-            ctx.arc(startX, startY, 5, 0, Math.PI * 2);
+            ctx.arc(startX, startY, 5.5, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#c0392b';
+            ctx.fillStyle = '#b91c1c';
             ctx.beginPath();
-            ctx.arc(endX, endY, 5, 0, Math.PI * 2);
+            ctx.arc(endX, endY, 5.5, 0, Math.PI * 2);
             ctx.fill();
-            ctx.font = 'bold 11px sans-serif';
-            ctx.fillStyle = '#2c3e50';
-            ctx.fillText('起点', startX + 6, startY - 4);
-            ctx.fillStyle = '#c0392b';
-            ctx.fillText('终点', endX + 6, endY - 4);
-
-            // 辅助点
-            ctx.font = '9px sans-serif';
+            ctx.font = 'bold 11px "Segoe UI"';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText('起点', startX + 7, startY - 5);
+            ctx.fillStyle = '#b91c1c';
+            ctx.fillText('终点', endX + 7, endY - 5);
+            
+            // 辅助控制点视觉 (t=0.25, 0.5, 0.75)
+            ctx.font = '9px monospace';
             for (let tCtrl of [0.25, 0.5, 0.75]) {
-                const yCtrl = calcEase(tCtrl, p1, p2);
+                const yCtrl = cubicBezierY(tCtrl, p1, p2, p3, p4);
                 const xCtrl = getX(tCtrl);
-                const yCtrlPos = getYCustom(yCtrl);
+                const yCtrlPos = mapY(yCtrl);
                 if (yCtrlPos >= pad && yCtrlPos <= H - pad) {
                     ctx.beginPath();
-                    ctx.arc(xCtrl, yCtrlPos, 2.5, 0, Math.PI * 2);
-                    ctx.fillStyle = '#9b59b6';
+                    ctx.arc(xCtrl, yCtrlPos, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#8b5cf6';
                     ctx.fill();
+                    ctx.fillStyle = '#475569';
+                    ctx.fillText(`t=${tCtrl}`, xCtrl + 5, yCtrlPos - 3);
                 }
             }
         }
-
-        // 更新按钮禁用状态
-        function updateButtonStates(inputElem, minusBtn, plusBtn) {
-            const val = parseFloat(inputElem.value);
-            if (isNaN(val)) {
-                minusBtn.disabled = false;
-                plusBtn.disabled = false;
-                return;
-            }
-            minusBtn.disabled = (val <= MIN_VAL);
-            plusBtn.disabled = (val >= MAX_VAL);
-        }
-
-        // 获取输入框关联的按钮
+        
+        // ---------- UI 同步与按钮禁用管理 ----------
         function getAssociatedButtons(inputElem) {
             const row = inputElem.closest('.slider-row');
+            if (!row) return { minusBtn: null, plusBtn: null };
             const btns = row.querySelectorAll('.step-btn');
-            const minusBtn = btns[0]; // 第一个是减号按钮
-            const plusBtn = btns[1]; // 第二个是加号按钮
-            return { minusBtn, plusBtn };
+            return { minusBtn: btns[0], plusBtn: btns[1] };
         }
-
-        // 从滑块同步到输入框并重绘
-        function updateFromSliders() {
+        
+        function updateButtonStateForInput(inputElem) {
+            const val = parseFloat(inputElem.value);
+            if (isNaN(val)) return;
+            const { minusBtn, plusBtn } = getAssociatedButtons(inputElem);
+            if (minusBtn) minusBtn.disabled = (val <= MIN_VAL);
+            if (plusBtn) plusBtn.disabled = (val >= MAX_VAL);
+        }
+        
+        function updateAllButtonsState() {
+            updateButtonStateForInput(p1Input);
+            updateButtonStateForInput(p2Input);
+            updateButtonStateForInput(p3Input);
+            updateButtonStateForInput(p4Input);
+        }
+        
+        // 从滑块同步到输入框 (保证显示值格式化) 并重绘
+        function syncFromSlidersAndDraw() {
             const p1 = parseFloat(p1Slider.value);
             const p2 = parseFloat(p2Slider.value);
-            const p1Val = formatDisplayValue(p1);
-            const p2Val = formatDisplayValue(p2);
-            if (p1Input.value !== p1Val) p1Input.value = p1Val;
-            if (p2Input.value !== p2Val) p2Input.value = p2Val;
-            drawCurve(p1, p2);
-            // 更新按钮状态
-            const btns1 = getAssociatedButtons(p1Input);
-            const btns2 = getAssociatedButtons(p2Input);
-            updateButtonStates(p1Input, btns1.minusBtn, btns1.plusBtn);
-            updateButtonStates(p2Input, btns2.minusBtn, btns2.plusBtn);
+            const p3 = parseFloat(p3Slider.value);
+            const p4 = parseFloat(p4Slider.value);
+            
+            p1Input.value = formatDisplayValue(p1);
+            p2Input.value = formatDisplayValue(p2);
+            p3Input.value = formatDisplayValue(p3);
+            p4Input.value = formatDisplayValue(p4);
+            
+            drawCurve(p1, p2, p3, p4);
+            updateAllButtonsState();
         }
-
-        // 从输入框同步到滑块（用于 input 事件 - 实时更新但不修改输入框值）
+        
+        // 输入框实时同步到滑块 (不修改输入框显示内容，只驱动曲线)
         function syncInputToSliderRealtime(inputElem, sliderElem) {
             let raw = inputElem.value.trim();
             if (raw === "" || raw === "-" || raw === "." || raw === "-.") return;
@@ -450,115 +579,115 @@
             if (isNaN(val)) return;
             val = clamp(val, MIN_VAL, MAX_VAL);
             sliderElem.value = val;
-            const p1 = parseFloat(p1Slider.value);
-            const p2 = parseFloat(p2Slider.value);
-            drawCurve(p1, p2);
-            // 更新按钮状态
-            const btns1 = getAssociatedButtons(p1Input);
-            const btns2 = getAssociatedButtons(p2Input);
-            updateButtonStates(p1Input, btns1.minusBtn, btns1.plusBtn);
-            updateButtonStates(p2Input, btns2.minusBtn, btns2.plusBtn);
+            const points = getCurrentPoints();
+            drawCurve(points.p1, points.p2, points.p3, points.p4);
+            updateAllButtonsState();
         }
-
-        // 从输入框同步到滑块（用于 change/blur 事件 - 格式化并更新）
+        
+        // 最终同步 (change/blur) 格式化输入框精度并修正范围
         function syncInputToSliderFinal(inputElem, sliderElem) {
             let raw = inputElem.value.trim();
             if (raw === "" || raw === "-" || raw === "." || raw === "-.") {
-                // 无效输入，恢复为滑块当前值
+                // 无效恢复滑块值
                 const sliderVal = parseFloat(sliderElem.value);
                 inputElem.value = formatDisplayValue(sliderVal);
-                const p1 = parseFloat(p1Slider.value);
-                const p2 = parseFloat(p2Slider.value);
-                drawCurve(p1, p2);
-                const btns1 = getAssociatedButtons(p1Input);
-                const btns2 = getAssociatedButtons(p2Input);
-                updateButtonStates(p1Input, btns1.minusBtn, btns1.plusBtn);
-                updateButtonStates(p2Input, btns2.minusBtn, btns2.plusBtn);
+                const points = getCurrentPoints();
+                drawCurve(points.p1, points.p2, points.p3, points.p4);
+                updateAllButtonsState();
                 return;
             }
             let val = parseFloat(raw);
             if (isNaN(val)) {
                 const sliderVal = parseFloat(sliderElem.value);
                 inputElem.value = formatDisplayValue(sliderVal);
-                const p1 = parseFloat(p1Slider.value);
-                const p2 = parseFloat(p2Slider.value);
-                drawCurve(p1, p2);
-                const btns1 = getAssociatedButtons(p1Input);
-                const btns2 = getAssociatedButtons(p2Input);
-                updateButtonStates(p1Input, btns1.minusBtn, btns1.plusBtn);
-                updateButtonStates(p2Input, btns2.minusBtn, btns2.plusBtn);
+                const points = getCurrentPoints();
+                drawCurve(points.p1, points.p2, points.p3, points.p4);
+                updateAllButtonsState();
                 return;
             }
             val = clamp(val, MIN_VAL, MAX_VAL);
             sliderElem.value = val;
-            // 使用保留精度的格式化
             const formatted = formatWithInputPrecision(raw, val);
             if (inputElem.value !== formatted) inputElem.value = formatted;
-            const p1 = parseFloat(p1Slider.value);
-            const p2 = parseFloat(p2Slider.value);
-            drawCurve(p1, p2);
-            // 更新按钮状态
-            const btns1 = getAssociatedButtons(p1Input);
-            const btns2 = getAssociatedButtons(p2Input);
-            updateButtonStates(p1Input, btns1.minusBtn, btns1.plusBtn);
-            updateButtonStates(p2Input, btns2.minusBtn, btns2.plusBtn);
+            const points = getCurrentPoints();
+            drawCurve(points.p1, points.p2, points.p3, points.p4);
+            updateAllButtonsState();
         }
-
-        // 按钮点击处理
+        
+        // 步进按钮逻辑 (支持 p1-p4)
         function handleStepButtonClick(btn) {
             const target = btn.getAttribute('data-target');
             const delta = parseFloat(btn.getAttribute('data-delta'));
-            const inputElem = target === 'p1' ? p1Input : p2Input;
-            const sliderElem = target === 'p1' ? p1Slider : p2Slider;
-
+            let inputElem, sliderElem;
+            if (target === 'p1') { inputElem = p1Input; sliderElem = p1Slider; }
+            else if (target === 'p2') { inputElem = p2Input; sliderElem = p2Slider; }
+            else if (target === 'p3') { inputElem = p3Input; sliderElem = p3Slider; }
+            else if (target === 'p4') { inputElem = p4Input; sliderElem = p4Slider; }
+            else return;
+            
             let currentVal = parseFloat(inputElem.value);
-            if (isNaN(currentVal)) {
-                currentVal = parseFloat(sliderElem.value);
-                if (isNaN(currentVal)) currentVal = 0;
-            }
+            if (isNaN(currentVal)) currentVal = parseFloat(sliderElem.value);
+            if (isNaN(currentVal)) currentVal = 0;
             let newVal = currentVal + delta;
             newVal = clamp(newVal, MIN_VAL, MAX_VAL);
-            // 四舍五入到合理精度（避免浮点误差如 0.30000000000000004）
             const factor = Math.pow(10, MAX_DECIMALS);
             newVal = Math.round(newVal * factor) / factor;
             const displayStr = formatDisplayValue(newVal);
             inputElem.value = displayStr;
             sliderElem.value = newVal;
-            const p1 = parseFloat(p1Slider.value);
-            const p2 = parseFloat(p2Slider.value);
-            drawCurve(p1, p2);
-            // 更新按钮状态
-            const btns1 = getAssociatedButtons(p1Input);
-            const btns2 = getAssociatedButtons(p2Input);
-            updateButtonStates(p1Input, btns1.minusBtn, btns1.plusBtn);
-            updateButtonStates(p2Input, btns2.minusBtn, btns2.plusBtn);
+            const points = getCurrentPoints();
+            drawCurve(points.p1, points.p2, points.p3, points.p4);
+            updateAllButtonsState();
         }
-
-        // === 事件监听 ===
-
-        // 滑块
-        p1Slider.addEventListener('input', updateFromSliders);
-        p2Slider.addEventListener('input', updateFromSliders);
-
-        // 输入框 - input 事件（实时更新曲线，不修改输入框值）
-        p1Input.addEventListener('input', () => syncInputToSliderRealtime(p1Input, p1Slider));
-        p2Input.addEventListener('input', () => syncInputToSliderRealtime(p2Input, p2Slider));
-
-        // 输入框 - change 事件（格式化并更新）
-        p1Input.addEventListener('change', () => syncInputToSliderFinal(p1Input, p1Slider));
-        p2Input.addEventListener('change', () => syncInputToSliderFinal(p2Input, p2Slider));
-
-        // 输入框 - blur 事件（格式化并更新）
-        p1Input.addEventListener('blur', () => syncInputToSliderFinal(p1Input, p1Slider));
-        p2Input.addEventListener('blur', () => syncInputToSliderFinal(p2Input, p2Slider));
-
-        // 步进按钮 - click 事件（只触发一次，不持续检测）
-        allStepBtns.forEach(btn => {
-            btn.addEventListener('click', () => handleStepButtonClick(btn));
-        });
-
-        // 初始化
-        updateFromSliders();
-    </script>
+        
+        // ----- 事件绑定 -----
+        function bindEvents() {
+            // 滑块事件
+            p1Slider.addEventListener('input', syncFromSlidersAndDraw);
+            p2Slider.addEventListener('input', syncFromSlidersAndDraw);
+            p3Slider.addEventListener('input', syncFromSlidersAndDraw);
+            p4Slider.addEventListener('input', syncFromSlidersAndDraw);
+            
+            // 输入框实时 (input)
+            p1Input.addEventListener('input', () => syncInputToSliderRealtime(p1Input, p1Slider));
+            p2Input.addEventListener('input', () => syncInputToSliderRealtime(p2Input, p2Slider));
+            p3Input.addEventListener('input', () => syncInputToSliderRealtime(p3Input, p3Slider));
+            p4Input.addEventListener('input', () => syncInputToSliderRealtime(p4Input, p4Slider));
+            
+            // change & blur 最终格式化
+            p1Input.addEventListener('change', () => syncInputToSliderFinal(p1Input, p1Slider));
+            p2Input.addEventListener('change', () => syncInputToSliderFinal(p2Input, p2Slider));
+            p3Input.addEventListener('change', () => syncInputToSliderFinal(p3Input, p3Slider));
+            p4Input.addEventListener('change', () => syncInputToSliderFinal(p4Input, p4Slider));
+            
+            p1Input.addEventListener('blur', () => syncInputToSliderFinal(p1Input, p1Slider));
+            p2Input.addEventListener('blur', () => syncInputToSliderFinal(p2Input, p2Slider));
+            p3Input.addEventListener('blur', () => syncInputToSliderFinal(p3Input, p3Slider));
+            p4Input.addEventListener('blur', () => syncInputToSliderFinal(p4Input, p4Slider));
+            
+            // 步进按钮全局代理
+            const allStepBtns = document.querySelectorAll('.step-btn');
+            allStepBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleStepButtonClick(btn);
+                });
+            });
+        }
+        
+        // 初始化默认值: p1=0, p2=0, p3=1, p4=1
+        function initDefaults() {
+            p1Slider.value = '0'; p1Input.value = '0';
+            p2Slider.value = '0'; p2Input.value = '0';
+            p3Slider.value = '1'; p3Input.value = '1';
+            p4Slider.value = '1'; p4Input.value = '1';
+            updateAllButtonsState();
+            drawCurve(0, 0, 1, 1);
+        }
+        
+        bindEvents();
+        initDefaults();
+    })();
+</script>
 </body>
 </html>
